@@ -9,7 +9,7 @@ class pclCluster
 	//conversion from m to cm
 	const static int ratio=100;	
 	
-	const static int yWeight=1000000, xWeight=1000, zWeight=1;
+	const static float yWeight=10000000, xWeight=10000, zWeight=1;
 
 	public:
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
@@ -87,7 +87,8 @@ class pclCluster
 	void heapSort(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int n);
 	void heapify(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int n, int i);
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr extractHull();
+	pcl::PointCloud<pcl::PointXYZ>::Ptr extractHull(int pointsToCosider);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr extractSurface(int decPlaces);
 };
 
 ////////////////////////////////
@@ -443,6 +444,7 @@ void pclCluster::localizedMaxMin(char dim, double lowerLim, double upperLim, dou
 	{
 		if(cloud->points[i].y> lowerLim && cloud->points[i].y <upperLim)
 		{
+			
 			if(getPointDim(i,dimVal)>*max){*max = getPointDim(i,dimVal);}
 			if(getPointDim(i,dimVal)<*min){*min = getPointDim(i,dimVal);}
 		}
@@ -537,12 +539,12 @@ void pclCluster::doQuickSort()
 
 void pclCluster::printCluster()
 {
+	cout<<"Index, Y, X, Z\n";
 	for(int i=0; i<(*cloud).points.size(); i++)
 	{
-		cout<<"Index: "<<i;
-		cout<<", Y"<< (*cloud).points[i].y;
-		cout<<", X"<< (*cloud).points[i].x;
-		cout<<", Z"<< (*cloud).points[i].z<<endl;
+		cout<< i<<", "<< (*cloud).points[i].y;
+		cout<<", "<< (*cloud).points[i].x;
+		cout<<", "<< (*cloud).points[i].z<<endl;
 	}
 }
 
@@ -554,7 +556,7 @@ void pclCluster::printCluster()
 void pclCluster::heapify(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int n, int i)
 {
 	depth++;
-	if(maxDepth<depth){maxDepth=depth;}
+	if(maxDepth<depth){maxDepth=depth; cout<<"new Depth: "<<maxDepth<<endl;}
 	
 	
     int largest = i;  // Initialize largest as root
@@ -627,21 +629,57 @@ void pclCluster::doHeapSort()
 	cout<<"MaxDepth: "<<maxDepth<<endl;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::extractHull()
+pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::extractHull(int pointsToConsider)
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr hull (new pcl::PointCloud<pcl::PointXYZ>);
+
+	std::vector<int> indexes;	
+
+	double yVal, zMax;
+	int x, maxIndex;
+	x=maxIndex=0;
+	yVal=zMax=0;
 	
-	double xVal= cloud->points[0].x;
+	indexes.push_back(0);
+	int stop=cloud->points.size()-pointsToConsider;
 	
-	hull->push_back(cloud->points[0]);
-	
-	for(int i=0; i<cloud->points.size(); i++)
+	for(int i=0; i<stop; i++)
 	{
-		if(xVal> cloud->points[i].x+.01 ||xVal< cloud->points[i].x-.01)
+			
+		if(yVal!= cloud->points[i].y)
 		{
-			hull->push_back(cloud->points[i]);
+			
+			yVal=cloud->points[i].y;
+
+			if(indexes[indexes.size()]!= maxIndex){indexes.push_back(maxIndex);}
+			
+			x=0;
+			zMax=cloud->points[i].z;
 		}
+		if(x>pointsToConsider)
+		{
+			
+			i=i-(pointsToConsider/2);
+			if(indexes[indexes.size()]!= maxIndex){indexes.push_back(maxIndex);}
+			x=0;
+			zMax=cloud->points[i].z;
+		}
+
+		if(zMax<cloud->points[i].z)
+		{
+
+			zMax= cloud->points[i].z;
+			maxIndex=i;
+		}
+		
 	}
+
+	hull->width=indexes.size();
+	hull->height =1;
+	hull->is_dense=true;
+	hull->points.resize(indexes.size());
+
+	for (int i=0; i<indexes.size(); i++){hull->points[i]=cloud->points[indexes[i]];}
 	
 	return hull;
 }
@@ -649,7 +687,26 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::extractHull()
 
 
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::extractSurface(int decPlaces)
+{
+	pcl::PointCloud<pcl::PointXYZ>::Ptr hull (new pcl::PointCloud<pcl::PointXYZ>);
 
+	int x, xLast;
+	x=xLast=0;
+	for(int i=0; i<cloud->points.size(); i++)
+	{
+		x = (int)(decPlaces*cloud->points[i].x);
+		if(x!=xLast)
+		{
+			hull->points.push_back(cloud->points[i]);
+			xLast=x;
+		}
+	}
+	hull->width=hull->points.size();
+	hull->height =1;
+	hull->is_dense=true;
+	return hull;
+}	
 
 
 
