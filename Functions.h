@@ -102,14 +102,12 @@ void viewBySize(int minSize, int maxSize, std::vector<pclCluster> clusters)
 //Crops all clusters in a vector and returns the resulting vector
 std::vector<pclCluster> cropAll(std::string dim, double max, double min, std::vector<pclCluster>	clusters )
 {
-
-	std::vector<pclCluster> copyClusters=clusters;
 	//calls the crop fuction on each cluster object
-	for(int i=0; i<copyClusters.size(); i++)
+	for(std::vector<pclCluster >::iterator i=clusters.begin(); i!= clusters.end(); i++)
 	{
-		copyClusters[i].crop(dim, max, min);
+		(*i).crop(dim, max, min);
 	}
-	return copyClusters;
+	return clusters;
 }
 
 
