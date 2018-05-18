@@ -52,8 +52,18 @@ class pclCluster
 	void translateY(double mvY);
 	void translateZ(double mvZ);
 
+	//reflect the cloud an axsis
+	void reflect(char dim);
+	
+	//findsAMaxand a min within a subset of the cloud
+	void localizedMaxMin(char dim, double lowerLim, double upperLim, double *max, double *min);
+
 	//removes outliers
 	void removeOutliers(int pointNumb,double stdDevMul);
+	
+	//A way to use a variable to get a point value
+	double getPointDim(int index, int dim);
+	
 	
 };
 
@@ -231,6 +241,10 @@ void pclCluster::resize(double dimX, double dimY, double dimZ)
 			(((cloud->points[i].z-minZ)/(maxZ-minZ))*dimZ)+minZ;
 		}
 	}
+
+
+	findSize();
+
 	
 }
 
@@ -253,6 +267,9 @@ void pclCluster::crop(std::string dim, double max, double min)
 	
 	//setting the new cloud as this cluster's cloud
 	cloud = temp;
+	
+	findSize();
+
 }
 
 
@@ -328,6 +345,8 @@ void pclCluster::translateX(double mvX)
 	{
 		cloud->points[i].x=(cloud->points[i].x)-mvX;
 	}
+
+	findSize();
 	
 }
 
@@ -338,7 +357,9 @@ void pclCluster::translateY(double mvY)
 	{
 		cloud->points[i].y=(cloud->points[i].y)-mvY;
 	}
-	
+
+	findSize();
+
 }
 
 void pclCluster::translateZ(double mvZ)
@@ -348,7 +369,34 @@ void pclCluster::translateZ(double mvZ)
 	{
 		cloud->points[i].z=(cloud->points[i].z)-mvZ;
 	}
+
+findSize();
 	
+}
+
+
+void pclCluster::reflect(char dim)
+{
+	bool dimX, dimY, dimZ;
+	dimX = dimY = dimZ = false;
+	
+	for(int i=0; i< cloud->points.size(); i++)
+	{
+		switch(dim)
+		{
+			case 'x': case 'X':
+				cloud->points[i].x=cloud->points[i].x *(-1);
+				break;
+			case 'y': case 'Y':
+				cloud->points[i].y=cloud->points[i].y *(-1);
+				break;
+			case 'z': case 'Z':
+				cloud->points[i].z=cloud->points[i].z *(-1);
+				break;
+		}
+	}
+
+	findSize();
 }
 
 
@@ -366,9 +414,49 @@ void pclCluster::removeOutliers(int pointNumb,double stdDevMul)
 }
 
 
+void pclCluster::localizedMaxMin(char dim, double lowerLim, double upperLim, double *max, double *min)
+{
+	int dimVal=0;
+	
+	
+	switch(dim)
+	{
+		case 'z': case 'Z': dimVal=0;
+		break;
+		case 'y': case 'Y': dimVal=1;
+		break;
+		case 'x': case 'X': dimVal=2;
+		break;
+	}
+	
+	//setting to mid point
+	*max = *min = (getData(dimVal+3)/2) ;
+	
+	for(int i=0; i<cloud->points.size(); i++)
+	{
+		if(cloud->points[i].y> lowerLim && cloud->points[i].y <upperLim)
+		{
+			if(getPointDim(i,dimVal)>*max){*max = getPointDim(i,dimVal);}
+			if(getPointDim(i,dimVal)<*min){*min = getPointDim(i,dimVal);}
+		}
+		if(cloud->points[i].y> upperLim){break;}
+	}
+}
 
-
-
+double pclCluster::getPointDim(int index, int dim)
+{
+	double value;
+	switch(dim)
+	{
+		case 0: value = (double) cloud->points[index].z;
+		break;
+		case 1: value = (double) cloud->points[index].y;
+		break;
+		case 2: value = (double) cloud->points[index].x;
+		break;
+	}
+	return value;
+}
 
 
 
