@@ -303,13 +303,13 @@ double pclCluster::getData(int x)
 			data = volume;
 			break;
 		case 3: 
-			data = center.z;
+			data = (double) center.z;
 			break;
 		case 4: 
-			data = center.y;
+			data = (double) center.y;
 			break;
 		case 5: 
-			data = center.x;
+			data = (double) center.x;
 			break;
 		
 		
@@ -440,6 +440,9 @@ void pclCluster::localizedMaxMin(char dim, double lowerLim, double upperLim, dou
 	//setting to mid point
 	*max = *min = (getData(dimVal+3)/2) ;
 	
+	*max = *max-1;
+	*min= *min+1;
+
 	for(int i=0; i<cloud->points.size(); i++)
 	{
 		if(cloud->points[i].y> lowerLim && cloud->points[i].y <upperLim)
