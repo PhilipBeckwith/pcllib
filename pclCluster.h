@@ -425,7 +425,7 @@ void pclCluster::removeOutliers(int pointNumb,double stdDevMul)
 void pclCluster::localizedMaxMin(char dim, double lowerLim, double upperLim, double *max, double *min)
 {
 	int dimVal=0;
-	
+	bool noMax=true, noMin=true;
 	
 	switch(dim)
 	{
@@ -445,11 +445,13 @@ void pclCluster::localizedMaxMin(char dim, double lowerLim, double upperLim, dou
 		if(cloud->points[i].y> lowerLim && cloud->points[i].y <upperLim)
 		{
 			
-			if(getPointDim(i,dimVal)>*max){*max = getPointDim(i,dimVal);}
-			if(getPointDim(i,dimVal)<*min){*min = getPointDim(i,dimVal);}
+			if(getPointDim(i,dimVal)>=*max){*max = getPointDim(i,dimVal); noMax=false;}
+			if(getPointDim(i,dimVal)<=*min){*min = getPointDim(i,dimVal); noMin=false;}
 		}
 		if(cloud->points[i].y> upperLim){break;}
 	}
+	if(noMax){*max=0;}
+	if(noMin){*min=0;}
 }
 
 double pclCluster::getPointDim(int index, int dim)
