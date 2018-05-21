@@ -9,7 +9,7 @@ class pclCluster
 	//conversion from m to cm
 	const static int ratio=100;	
 	
-	const static float yWeight=10000000, xWeight=10000, zWeight=1;
+	const static float yWeight=10000, xWeight=100, zWeight=1;
 
 	public:
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
@@ -573,16 +573,22 @@ void pclCluster::heapify(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl
 
 	p=points[largest];
 	largestVal = (p.y*yWeight+p.x*xWeight+p.z*zWeight);   
-	 
+	 int x,y,z;
 	 if(l<n)
 	 {
 		p=points[l];
-		lVal = (p.y*yWeight+p.x*xWeight+p.z*zWeight);  
+		y=(int) p.y*yWeight;
+		x=(int) p.x*xWeight;
+		z=(int) p.z*zWeight;
+		lVal = (y+x+z);  
 	  }
 	  if(r<n)
 	 {
 		p=points[r];
-		rVal = (p.y*yWeight+p.x*xWeight+p.z*zWeight);  
+		y=(int) p.y*yWeight;
+		x=(int) p.x*xWeight;
+		z=(int) p.z*zWeight;
+		rVal = (y+x+z);  
 	  } 
 
 	
