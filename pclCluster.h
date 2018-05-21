@@ -9,7 +9,7 @@ class pclCluster
 	//conversion from m to cm
 	const static int ratio=100;	
 	
-	const static float yWeight=10000, xWeight=100, zWeight=1;
+	const static double yWeight=1000000, xWeight=1000, zWeight=1;
 
 	public:
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
@@ -577,18 +577,18 @@ void pclCluster::heapify(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl
 	 if(l<n)
 	 {
 		p=points[l];
-		y=(int) p.y*yWeight;
-		x=(int) p.x*xWeight;
-		z=(int) p.z*zWeight;
-		lVal = (y+x+z);  
+		y=(int) p.y*100;
+		x=(int) p.x*100;
+		z=(int) p.z*100;
+		lVal = (y*yWeight+x*xWeight+z*zWeight);  
 	  }
 	  if(r<n)
 	 {
 		p=points[r];
-		y=(int) p.y*yWeight;
-		x=(int) p.x*xWeight;
-		z=(int) p.z*zWeight;
-		rVal = (y+x+z);  
+		y=(int) p.y*100;
+		x=(int) p.x*100;
+		z=(int) p.z*100;
+		lVal = (y*yWeight+x*xWeight+z*zWeight);  
 	  } 
 
 	
@@ -618,6 +618,7 @@ void pclCluster::heapSort(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pc
 {
     // Build heap (rearrange array)
     for (int i = n / 2 - 1; i >= 0; i--)
+	{
         heapify(points, n, i);
  
     // One by one extract an element from heap
@@ -630,6 +631,7 @@ void pclCluster::heapSort(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pc
         // call max heapify on the reduced heap
         heapify(points, i, 0);
     }
+}
 }
 
 
