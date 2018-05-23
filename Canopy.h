@@ -19,7 +19,7 @@ class PointCanopy
 	void makeCanopy(int dec);
 	void setHeight(int x, int y, float z);
 	
-	pcl::PointCloud<pcl::PointXYZ>::Ptr getCanopy();
+	pclCluster getCanopy();
 };
 
 
@@ -80,6 +80,7 @@ void PointCanopy::makeCanopy(int dec)
 		z= cloud.cloud->points[i].z;
 		setHeight(x,y,z);
 	}
+	cloud.translateCenter(center.x,center.y,center.z);
 }
 
 void PointCanopy::setHeight(int x, int y, float z)
@@ -94,7 +95,7 @@ void PointCanopy::setHeight(int x, int y, float z)
 }
 
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr PointCanopy::getCanopy()
+pclCluster PointCanopy::getCanopy()
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr canopy(new pcl::PointCloud<pcl::PointXYZ>);
 	
@@ -108,7 +109,10 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr PointCanopy::getCanopy()
 	canopy->height = 1;
 	canopy->is_dense = true;
 	
-	return canopy;
+	cloud.cloud=canopy;
+	cloud.findSize();	
+
+	return cloud;
 }
 
 
