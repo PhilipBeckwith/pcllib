@@ -89,6 +89,7 @@ class pclCluster
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr extractHull(int pointsToCosider);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr extractSurface(int decPlaces);
+	void pclCluster::cloudRound(int dec);
 };
 
 ////////////////////////////////
@@ -388,8 +389,6 @@ void pclCluster::translateZ(double mvZ)
 
 void pclCluster::reflect(char dim)
 {
-	bool dimX, dimY, dimZ;
-	dimX = dimY = dimZ = false;
 	
 	for(int i=0; i< cloud->points.size(); i++)
 	{
@@ -721,9 +720,24 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::extractSurface(int decPlaces)
 	return hull;
 }	
 
-
-
-
+void pclCluster::cloudRound(int dec)
+{
+	float x,y,z;
+	for(int i=0; i<cloud[0].cloud->size(); i++)
+	{
+		x=cloud[0].cloud->points[i].x;
+		y=cloud[0].cloud->points[i].y;
+		z=cloud[0].cloud->points[i].z;
+				
+		x= round(x*dec)/dec;
+		y= round(y*dec)/dec;
+		z= round(z*dec)/dec;
+		
+		cloud[0].cloud->points[i].x=x;
+		cloud[0].cloud->points[i].y=y;
+		cloud[0].cloud->points[i].z=z;
+	}
+}
 
 
 
