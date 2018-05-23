@@ -89,7 +89,7 @@ class pclCluster
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr extractHull(int pointsToCosider);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr extractSurface(int decPlaces);
-	void pclCluster::cloudRound(int dec);
+	void cloudRound(int dec);
 };
 
 ////////////////////////////////
@@ -723,19 +723,19 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::extractSurface(int decPlaces)
 void pclCluster::cloudRound(int dec)
 {
 	float x,y,z;
-	for(int i=0; i<cloud[0].cloud->size(); i++)
+	for(int i=0; i<cloud->size(); i++)
 	{
-		x=cloud[0].cloud->points[i].x;
-		y=cloud[0].cloud->points[i].y;
-		z=cloud[0].cloud->points[i].z;
+		x=cloud->points[i].x;
+		y=cloud->points[i].y;
+		z=cloud->points[i].z;
 				
 		x= round(x*dec)/dec;
 		y= round(y*dec)/dec;
 		z= round(z*dec)/dec;
 		
-		cloud[0].cloud->points[i].x=x;
-		cloud[0].cloud->points[i].y=y;
-		cloud[0].cloud->points[i].z=z;
+		cloud->points[i].x=x;
+		cloud->points[i].y=y;
+		cloud->points[i].z=z;
 	}
 }
 

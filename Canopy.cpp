@@ -1,13 +1,17 @@
 #pragma once
 #include "Canopy.h"
 
-
+/*
 //constructor
+PointCanopy::PointCanopy(){}
 PointCanopy::PointCanopy(pclCluster cloudIN)
 {
 	cloud=cloudIN;
-	initalizeField();
-	makeCanopy();
+}
+
+PointCanopy::setCloud(pclCluster cloudIN)
+{
+	cloud=cloudIN;
 }
 
 void PointCanopy::prepareCloud(int dec)
@@ -85,7 +89,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr PointCanopy::getCanopy()
 }
 
 
-
+*/
 
 
 
