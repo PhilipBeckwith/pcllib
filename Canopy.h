@@ -1,13 +1,15 @@
 #pragma once
 #include "includes.h"
 #include "pclCluster.h"
+#include "GaussSmoothen.h"
 
 class PointCanopy
 {
+	const static float floor =-1.5;
 	std::vector<std::vector<pcl::PointXYZ> > pointField;
 	pcl::PointXYZ center;
 	pclCluster cloud;	
-
+	
 	public:
 	//constructors
 	PointCanopy();
@@ -18,7 +20,10 @@ class PointCanopy
 	void initalizeField(int dec);
 	void makeCanopy(int dec);
 	void setHeight(int x, int y, float z);
-	
+	void mend(std::vector<double>values, int i);
+	void smooth(double sigma, int samples);
+	void fillGaps();
+	std::vector<double> rip(int i);
 	pclCluster getCanopy();
 };
 
@@ -61,7 +66,7 @@ void PointCanopy::initalizeField(int dec)
 		{
 			pointField[i][j].x=(i*1.0)/dec;
 			pointField[i][j].y=(j*1.0)/dec;
-			pointField[i][j].z=-1.5;
+			pointField[i][j].z=floor;
 		}
 	}
 }
@@ -114,6 +119,98 @@ pclCluster PointCanopy::getCanopy()
 
 	return cloud;
 }
+
+std::vector<double> PointCanopy::rip(int i)
+{
+	std::vector<double> values;
+	double z;
+	for(int j=0; j<pointField[i].size(); j++)
+	{
+		z=(double) pointField[i][j].z;
+		values.push_back(z);
+	}	
+	return values;
+}
+
+void PointCanopy::smooth(double sigma, int samples)
+{
+	std::vector<double> values;
+	for(int i=0; i<pointField.size(); i++)
+	{
+		values = rip(i);
+		values = gaussSmoothen(values, sigma, samples);
+		mend(values, i);
+		values.clear();
+	}
+}
+
+void PointCanopy::mend(std::vector<double>values, int i)
+{
+	for(int j=0; j<pointField[i].size(); j++)
+	{
+		pointField[i][j].z= (float) values[j];
+	}
+}
+
+
+void PointCanopy::fillGaps()
+{ 
+	int count=0,holes =0;
+	int width = pointField.size();
+	int length = pointField[0].size();
+	float next, last;
+	for(int i=0; i < length; i++){
+		next=last=floor;
+		for(int j=1; j<width-1; j++)
+		{
+			if(pointField[j][i+1].z!=floor)
+				{next = pointField[j][i+1].z;}
+			if(pointField[j][i-1].z!=floor)
+				{last = pointField[j][i-1].z;}
+			if(pointField[j][i].z == floor)
+			{
+				holes++;
+				if(((next+last)/2) != floor)
+					{
+						pointField[j][i].z= (next+last)/2;
+						count++;
+					}
+			}
+		}
+		for(int j=width-1; j>0; j--)
+		{
+			if(pointField[j][i+1].z!=floor)
+				{next = pointField[j][i+1].z;}
+			if(pointField[j][i-1].z!=floor)
+				{last = pointField[j][i-1].z;}
+			if(pointField[j][i].z == floor)
+			{
+				if(((next+last)/2) != floor)
+					{
+						pointField[j][i].z= (next+last)/2;
+						count++;
+					}
+			}
+		}
+	}
+	
+	std::cout<<"Filled "<<count<<" Gaps of "<<holes<<" holes\n";
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

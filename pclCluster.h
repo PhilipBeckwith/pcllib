@@ -116,10 +116,10 @@ void pclCluster::open(std::string fileName)
 {
 	
 	pcl::PointCloud<pcl::PointXYZ>::Ptr temp (new pcl::PointCloud<pcl::PointXYZ>);
-	cout<<"opening File..."<<endl;
 	
 	if (pcl::io::loadPCDFile<pcl::PointXYZ> (fileName, *temp) == -1)
 	{
+		
 		pcl::PointCloud<pcl::PointXYZ>::Ptr Error (new pcl::PointCloud<pcl::PointXYZ>);
 		pcl::PointXYZ OOPS;
 		Error->points.push_back(OOPS);
