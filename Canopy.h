@@ -2,6 +2,8 @@
 #include "includes.h"
 #include "pclCluster.h"
 #include "GaussSmoothen.h"
+#include "math.h"
+#include "Smooth.h"
 
 class PointCanopy
 {
@@ -22,7 +24,10 @@ class PointCanopy
 	void setHeight(int x, int y, float z);
 	void mend(std::vector<double>values, int i);
 	void smooth(double sigma, int samples);
-	void fillGaps();
+	void smooth(int buffer);
+	int fillGaps(int skip);
+	int fillGapsX(int skip);
+	int fillGapsY(int skip);
 	std::vector<double> rip(int i);
 	pclCluster getCanopy();
 };
@@ -80,8 +85,8 @@ void PointCanopy::makeCanopy(int dec)
 	
 	for(int i=0; i<cloud.cloud->points.size(); i++)
 	{
-		x=int (cloud.cloud->points[i].x * dec);
-		y=int (cloud.cloud->points[i].y * dec);
+		x=(int) round(cloud.cloud->points[i].x * dec);
+		y=(int) round(cloud.cloud->points[i].y * dec);
 		z= cloud.cloud->points[i].z;
 		setHeight(x,y,z);
 	}
@@ -127,7 +132,8 @@ std::vector<double> PointCanopy::rip(int i)
 	for(int j=0; j<pointField[i].size(); j++)
 	{
 		z=(double) pointField[i][j].z;
-		values.push_back(z);
+		if(z!=floor){
+			values.push_back(z);}
 	}	
 	return values;
 }
@@ -144,71 +150,108 @@ void PointCanopy::smooth(double sigma, int samples)
 	}
 }
 
-void PointCanopy::mend(std::vector<double>values, int i)
+
+
+void PointCanopy::smooth(int buffer)
 {
-	for(int j=0; j<pointField[i].size(); j++)
+	std::vector<double> values;
+	for(int i=0; i<pointField.size(); i++)
 	{
-		pointField[i][j].z= (float) values[j];
+		values = rip(i);
+		values = simpleSmooth(values, buffer);
+		mend(values, i);
+		values.clear();
 	}
 }
 
 
-void PointCanopy::fillGaps()
+void PointCanopy::mend(std::vector<double>values, int i)
+{
+	int index=0;
+	for(int j=0; j<pointField[i].size(); j++)
+	{
+		if(pointField[i][j].z!= floor)
+		{
+			pointField[i][j].z= (float) values[index];
+			index ++;
+		}
+	}
+}
+
+
+int PointCanopy::fillGapsX(int skip)
 { 
-	int count=0,holes =0;
+	std::cout<<"\nfill Gaps X";
+	int gaps =0;
 	int width = pointField.size();
 	int length = pointField[0].size();
 	float next, last;
-	for(int i=0; i < length; i++){
+	for(int i=0; i < length; i++)
+	{
 		next=last=floor;
-		for(int j=1; j<width-1; j++)
+		for(int j=skip; j<width-skip; j++)
 		{
-			if(pointField[j][i+1].z!=floor)
-				{next = pointField[j][i+1].z;}
-			if(pointField[j][i-1].z!=floor)
-				{last = pointField[j][i-1].z;}
+			next = pointField[j+skip][i].z;
+			last = pointField[j-skip][i].z;
 			if(pointField[j][i].z == floor)
 			{
-				holes++;
-				if(((next+last)/2) != floor)
+				gaps++;
+				if(last!=floor && next !=floor)
 					{
+						gaps--;
 						pointField[j][i].z= (next+last)/2;
-						count++;
+						
 					}
 			}
 		}
-		for(int j=width-1; j>0; j--)
-		{
-			if(pointField[j][i+1].z!=floor)
-				{next = pointField[j][i+1].z;}
-			if(pointField[j][i-1].z!=floor)
-				{last = pointField[j][i-1].z;}
-			if(pointField[j][i].z == floor)
-			{
-				if(((next+last)/2) != floor)
-					{
-						pointField[j][i].z= (next+last)/2;
-						count++;
-					}
-			}
-		}
+		
 	}
 	
-	std::cout<<"Filled "<<count<<" Gaps of "<<holes<<" holes\n";
-	
+	return gaps;
 }
 
 
 
+int PointCanopy::fillGapsY(int skip)
+{ 
+	std::cout<<"\nfill Gaps Y";
+	int gaps =0;
+	int width = pointField.size();
+	int length = pointField[0].size();
+	float next, last;
+	for(int i=0; i < width; i++)
+	{
+		next=last=floor;
+		for(int j=skip; j<length-skip; j++)
+		{
+			next = pointField[i][j+skip].z;
+			last = pointField[i][j-skip].z;
+			if(pointField[i][j].z == floor)
+			{
+				gaps++;
+				if(last!=floor && next !=floor)
+					{
+						gaps--;
+						pointField[i][j].z= (next+last)/2;
+						
+					}
+			}
+		}
+		
+	}
+	
+	return gaps;
+}
 
 
 
-
-
-
-
-
-
+int PointCanopy::fillGaps(int skip)
+{
+	int gaps =0;
+	fillGapsX(skip);
+	gaps = fillGapsY(skip);
+	return gaps;
+}
 
 
 
