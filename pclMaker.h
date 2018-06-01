@@ -1,6 +1,6 @@
 #pragma once
 #include "includes.h"
-
+#define PI 3.14159265
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr makeCircle(float diamiter, int sugestedPoints)
 {
@@ -12,12 +12,11 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeCircle(float diamiter, int sugestedPoint
 	int thetaInc,phiInc;
 	
 	phiInc= (int) (180/sqrt(sugestedPoints));
+	if(phiInc < 5){phiInc = 5;}
 
 	thetaInc = phiInc*2;
 	
-	
-	
-	for(int phi=91; phi<270; phi+=phiInc)
+	for(int phi=90; phi<270; phi+=phiInc)
 	{
 		height= master*sin(phi*PI/180);
 		radious= master*cos(phi*PI/180);
@@ -30,7 +29,6 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeCircle(float diamiter, int sugestedPoint
 			cloud->points.push_back(point);
 		}
 	}
-	
 	cloud->width = cloud->points.size();
 	cloud->height =1;
 	cloud->is_dense=true;
