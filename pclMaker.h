@@ -17,7 +17,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeCircle(float diamiter, int sugestedPoint
 	
 	
 	
-	for(int phi=90; phi<270; phi+=phiInc)
+	for(int phi=91; phi<270; phi+=phiInc)
 	{
 		height= master*sin(phi*PI/180);
 		radious= master*cos(phi*PI/180);
