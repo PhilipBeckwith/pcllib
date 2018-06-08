@@ -39,6 +39,7 @@
 #include <pcl/search/organized.h>
 #include <pcl/search/kdtree.h>
 
+#include <pcl/surface/mls.h>
 //for meshing
 
 
