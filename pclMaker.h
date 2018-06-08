@@ -37,6 +37,39 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeCircle(float diamiter, int sugestedPoint
 }
 
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr makeBranch(float diamiter, float length, int ringDencity ,int sugestedPoints)
+{
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+	
+	float pointsPerRing, distInc;
+	int lengthInc,phiInc, ringNum;
+	
+	ringNum=(length*ringDencity);
+	pointsPerRing = sugestedPoints/ringNum;
+	distInc= length/ringNum;
+	
+	thetaInc= (int) (180/sqrt(sugestedPoints));
+	if(thetaInc < 5){thetaInc = 5;}
+
+	for(float z=0; z<=length; z++)
+	{
+		for(int theta=0; theta <360; theta+=thetaInc)
+		{
+			pcl::PointXYZ point;
+			point.z= z;
+			point.y= (diamiter/2)*sin(theta*PI/180);
+			point.x= (diamiter/2)*cos(theta*PI/180);
+			cloud->points.push_back(point);
+		}
+	}
+	
+	
+	cloud->width = cloud->points.size();
+	cloud->height =1;
+	cloud->is_dense=true;
+	
+	return cloud;	
+}
 
 
 
