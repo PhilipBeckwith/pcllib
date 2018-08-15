@@ -59,7 +59,7 @@ class pclCluster
 	//reflect the cloud an axsis
 	void reflect(char dim);
 	
-	//findsAMaxand a min within a subset of the cloud
+	//finds A Max and a min within a subset of the cloud
 	void localizedMaxMin(char dim, double lowerLim, double upperLim, double *max, double *min);
 
 	//removes outliers
