@@ -49,7 +49,7 @@ void PointCanopy::setCloud(pclCluster cloudIN)
 void PointCanopy::prepareCloud(int dec)
 {
 	center=cloud.center;
-	cloud.cloudRound(dec);
+	//cloud.cloudRound(dec);
 	cloud.translateX(0);
 	cloud.translateY(0);
 	cloud.findSize();
