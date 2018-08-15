@@ -439,8 +439,8 @@ void pclCluster::localizedMaxMin(char dim, double lowerLim, double upperLim, dou
 	//setting to mid point
 	*max = *min = (getData(dimVal+3)/2) ;
 	
-	*max = *max-1;
-	*min= *min+1;
+	*max = *max-5;
+	*min= *min+5;
 
 	for(int i=0; i<cloud->points.size(); i++)
 	{
