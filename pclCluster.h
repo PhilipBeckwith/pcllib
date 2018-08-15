@@ -59,7 +59,7 @@ class pclCluster
 	//reflect the cloud an axsis
 	void reflect(char dim);
 	
-	//findsAMaxand a min within a subset of the cloud
+	//finds A Max and a min within a subset of the cloud
 	void localizedMaxMin(char dim, double lowerLim, double upperLim, double *max, double *min);
 
 	//removes outliers
@@ -90,6 +90,7 @@ class pclCluster
 	pcl::PointCloud<pcl::PointXYZ>::Ptr extractHull(int pointsToCosider);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr extractSurface(int decPlaces);
 	void cloudRound(int dec);
+	void cloudSmooth(float searchRad);
 };
 
 ////////////////////////////////
@@ -738,6 +739,33 @@ void pclCluster::cloudRound(int dec)
 		cloud->points[i].z=z;
 	}
 }
+
+
+void pclCluster::cloudSmooth(float searchRad)
+{
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointNormal> mls_points;
+	pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
+	
+	mls.setComputeNormals(true);
+	mls.setInputCloud(cloud);
+	mls.setPolynomialFit(true);
+	mls.setSearchMethod(tree);
+	mls.setSearchRadius(searchRad);
+	
+	mls.process(mls_points);
+	
+	pcl::io::savePCDFile("smoothedNormals.pcd", mls_points);
+}
+
+
+
+
+
+
+
+
+
 
 
 
