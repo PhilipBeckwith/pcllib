@@ -81,12 +81,12 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeUnitCircle()
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 	
-	float radious,;
+	float radious=1;
 
 	for(int theta=0; theta <360; theta++)
 	{
 		pcl::PointXYZ point;
-		point.z= height;
+		point.z= 0;
 		point.y= radious*sin(theta*PI/180);
 		point.x=radious*cos(theta*PI/180);
 		cloud->points.push_back(point);
