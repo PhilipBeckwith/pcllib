@@ -59,7 +59,7 @@ class pclCluster
 	//reflect the cloud an axsis
 	void reflect(char dim);
 	
-	//findsAMaxand a min within a subset of the cloud
+	//finds A Max and a min within a subset of the cloud
 	void localizedMaxMin(char dim, double lowerLim, double upperLim, double *max, double *min);
 
 	//removes outliers
@@ -440,8 +440,8 @@ void pclCluster::localizedMaxMin(char dim, double lowerLim, double upperLim, dou
 	//setting to mid point
 	*max = *min = (getData(dimVal+3)/2) ;
 	
-	*max = *max-1;
-	*min= *min+1;
+	*max = *max-5;
+	*min= *min+5;
 
 	for(int i=0; i<cloud->points.size(); i++)
 	{
