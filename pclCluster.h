@@ -9,9 +9,13 @@ class pclCluster
 	//conversion from m to cm
 	const static int ratio=100;	
 	
+	const static double yWeight=1000000, xWeight=1000, zWeight=1;
+
 	public:
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
 	pcl::PointXYZ center;
+
+	int depth, maxDepth;
 	
 	double height, width, length, volume;
 	double maxX, maxY, maxZ;
@@ -55,7 +59,7 @@ class pclCluster
 	//reflect the cloud an axsis
 	void reflect(char dim);
 	
-	//findsAMaxand a min within a subset of the cloud
+	//finds A Max and a min within a subset of the cloud
 	void localizedMaxMin(char dim, double lowerLim, double upperLim, double *max, double *min);
 
 	//removes outliers
@@ -64,9 +68,35 @@ class pclCluster
 	//A way to use a variable to get a point value
 	double getPointDim(int index, int dim);
 	
+<<<<<<< HEAD
 	//calculates normals and returns a cloud of the normals
 	pcl::PointCloud<pcl::PointXYZ>::Ptr getNormalCloud(float searchRad);
 	
+=======
+	//used for sorting the array 
+	void swap(pcl::PointXYZ* a,pcl::PointXYZ* b);
+	
+	/* This function takes last element as pivot, places
+   the pivot element at its correct position in sorted
+    array, and places all smaller (smaller than pivot)
+   to left of pivot and all greater elements to right
+   of pivot */
+	int partition (std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int low, int high);
+	void quickSort(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int low, int high);
+	void doQuickSort();
+	void printCluster();
+	
+	
+	//Heap Sort 
+	void doHeapSort();
+	void heapSort(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int n);
+	void heapify(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int n, int i);
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr extractHull(int pointsToCosider);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr extractSurface(int decPlaces);
+	void cloudRound(int dec);
+	void cloudSmooth(float searchRad);
+>>>>>>> 73de3620c04a91ad04485250d469dea32cdf9a1b
 };
 
 ////////////////////////////////
@@ -93,10 +123,10 @@ void pclCluster::open(std::string fileName)
 {
 	
 	pcl::PointCloud<pcl::PointXYZ>::Ptr temp (new pcl::PointCloud<pcl::PointXYZ>);
-	cout<<"opening File..."<<endl;
 	
 	if (pcl::io::loadPCDFile<pcl::PointXYZ> (fileName, *temp) == -1)
 	{
+		
 		pcl::PointCloud<pcl::PointXYZ>::Ptr Error (new pcl::PointCloud<pcl::PointXYZ>);
 		pcl::PointXYZ OOPS;
 		Error->points.push_back(OOPS);
@@ -243,10 +273,6 @@ void pclCluster::resize(double dimX, double dimY, double dimZ)
 			(((cloud->points[i].z-minZ)/(maxZ-minZ))*dimZ)+minZ;
 		}
 	}
-
-
-	findSize();
-
 	
 }
 
@@ -269,9 +295,6 @@ void pclCluster::crop(std::string dim, double max, double min)
 	
 	//setting the new cloud as this cluster's cloud
 	cloud = temp;
-	
-	findSize();
-
 }
 
 
@@ -288,13 +311,13 @@ double pclCluster::getData(int x)
 			data = volume;
 			break;
 		case 3: 
-			data = center.z;
+			data = (double) center.z;
 			break;
 		case 4: 
-			data = center.y;
+			data = (double) center.y;
 			break;
 		case 5: 
-			data = center.x;
+			data = (double) center.x;
 			break;
 		
 		
@@ -347,8 +370,6 @@ void pclCluster::translateX(double mvX)
 	{
 		cloud->points[i].x=(cloud->points[i].x)-mvX;
 	}
-
-	findSize();
 	
 }
 
@@ -359,9 +380,7 @@ void pclCluster::translateY(double mvY)
 	{
 		cloud->points[i].y=(cloud->points[i].y)-mvY;
 	}
-
-	findSize();
-
+	
 }
 
 void pclCluster::translateZ(double mvZ)
@@ -371,16 +390,12 @@ void pclCluster::translateZ(double mvZ)
 	{
 		cloud->points[i].z=(cloud->points[i].z)-mvZ;
 	}
-
-findSize();
 	
 }
 
 
 void pclCluster::reflect(char dim)
 {
-	bool dimX, dimY, dimZ;
-	dimX = dimY = dimZ = false;
 	
 	for(int i=0; i< cloud->points.size(); i++)
 	{
@@ -397,10 +412,7 @@ void pclCluster::reflect(char dim)
 				break;
 		}
 	}
-
-	findSize();
 }
-
 
 
 void pclCluster::removeOutliers(int pointNumb,double stdDevMul)
@@ -419,7 +431,7 @@ void pclCluster::removeOutliers(int pointNumb,double stdDevMul)
 void pclCluster::localizedMaxMin(char dim, double lowerLim, double upperLim, double *max, double *min)
 {
 	int dimVal=0;
-	
+	bool noMax=true, noMin=true;
 	
 	switch(dim)
 	{
@@ -434,15 +446,21 @@ void pclCluster::localizedMaxMin(char dim, double lowerLim, double upperLim, dou
 	//setting to mid point
 	*max = *min = (getData(dimVal+3)/2) ;
 	
+	*max = *max-5;
+	*min= *min+5;
+
 	for(int i=0; i<cloud->points.size(); i++)
 	{
 		if(cloud->points[i].y> lowerLim && cloud->points[i].y <upperLim)
 		{
-			if(getPointDim(i,dimVal)>*max){*max = getPointDim(i,dimVal);}
-			if(getPointDim(i,dimVal)<*min){*min = getPointDim(i,dimVal);}
+			
+			if(getPointDim(i,dimVal)>=*max){*max = getPointDim(i,dimVal); noMax=false;}
+			if(getPointDim(i,dimVal)<=*min){*min = getPointDim(i,dimVal); noMin=false;}
 		}
 		if(cloud->points[i].y> upperLim){break;}
 	}
+	if(noMax){*max=0;}
+	if(noMin){*min=0;}
 }
 
 double pclCluster::getPointDim(int index, int dim)
@@ -460,6 +478,7 @@ double pclCluster::getPointDim(int index, int dim)
 	return value;
 }
 
+<<<<<<< HEAD
 pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::getNormalCloud(float searchRad)
 {
 	//creating new cloud to be returned.
@@ -482,6 +501,302 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::getNormalCloud(float searchRad)
 
 	return normalCloud;
 }
+=======
+// A utility function to swap two elements
+void pclCluster::swap( pcl::PointXYZ* a,  pcl::PointXYZ* b)
+{
+
+    pcl::PointXYZ t = *a;
+    *a = *b;
+    *b = t;
+}
+
+
+/* This function takes last element as pivot, places
+   the pivot element at its correct position in sorted
+    array, and places all smaller (smaller than pivot)
+   to left of pivot and all greater elements to right
+   of pivot */
+int pclCluster::partition (std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int low, int high)
+{
+	pcl::PointXYZ p=points[high];
+	double pivot, test;
+	pivot = (p.y*yWeight+p.x*xWeight+p.z*zWeight);    // pivot
+	int i = (low - 1);  // Index of smaller element
+
+    for (int j = low; j <= high- 1; j++)
+    {
+        // If current element is smaller than or
+        // equal to pivot
+        
+        p=points[j];
+        test= (p.y*yWeight+p.x*xWeight+p.z*zWeight); 
+        
+        if (test <= pivot)
+        {
+            i++;    // increment index of smaller element
+            swap(&points[i], &points[j]);
+        }
+    }
+    swap(&points[i + 1], &points[high]);
+    return (i + 1);
+}
+
+
+/* The main function that implements QuickSort
+ arr[] --> Array to be sorted,
+  low  --> Starting index,
+  high  --> Ending index */
+void pclCluster::quickSort(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int low, int high)
+{
+	depth++;
+	std::cout<<depth<<endl;
+    if (low < high)
+    {
+        /* pi is partitioning index, arr[p] is now
+           at right place */
+        int pi = partition(points, low, high);
+
+        // Separately sort elements before
+        // partition and after partition
+        quickSort(points, low, pi - 1);
+        quickSort(points, pi + 1, high);
+    }
+	depth--;
+}
+
+
+void pclCluster::doQuickSort()
+{
+	quickSort((*cloud).points, 0, (*cloud).points.size()-1);
+	//make sure to change"is sorted" to true in the cloud
+}
+
+void pclCluster::printCluster()
+{
+	cout<<"Index, Y, X, Z\n";
+	for(int i=0; i<(*cloud).points.size(); i++)
+	{
+		cout<< i<<", "<< (*cloud).points[i].y;
+		cout<<", "<< (*cloud).points[i].x;
+		cout<<", "<< (*cloud).points[i].z<<endl;
+	}
+}
+
+
+
+// C++ program for implementation of Heap Sort
+// To heapify a subtree rooted with node i which is
+// an index in arr[]. n is size of heap
+void pclCluster::heapify(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int n, int i)
+{
+	depth++;
+	if(maxDepth<depth){maxDepth=depth; cout<<"new Depth: "<<maxDepth<<endl;}
+	
+	
+    int largest = i;  // Initialize largest as root
+    int l = 2*i + 1;  // left = 2*i + 1
+    int r = 2*i + 2;  // right = 2*i + 2
+
+	pcl::PointXYZ p;
+	double largestVal, lVal,rVal;
+
+	p=points[largest];
+	largestVal = (p.y*yWeight+p.x*xWeight+p.z*zWeight);   
+	 int x,y,z;
+	 if(l<n)
+	 {
+		p=points[l];
+		y=(int) p.y*100;
+		x=(int) p.x*100;
+		z=(int) p.z*100;
+		lVal = (y*yWeight+x*xWeight+z*zWeight);  
+	  }
+	  if(r<n)
+	 {
+		p=points[r];
+		y=(int) p.y*100;
+		x=(int) p.x*100;
+		z=(int) p.z*100;
+		lVal = (y*yWeight+x*xWeight+z*zWeight);  
+	  } 
+
+	
+    // If left child is larger than root
+    if (l < n && lVal > largestVal)
+        largest = l;
+ 
+    // If right child is larger than largest so far
+    if (r < n && rVal > largestVal)
+        largest = r;
+ 
+    // If largest is not root
+    if (largest != i)
+    {
+    	
+        swap(&points[i], &points[largest]);
+ 
+        // Recursively heapify the affected sub-tree
+        heapify(points, n, largest);
+    }
+    
+    depth--;
+}
+ 
+// main function to do heap sort
+void pclCluster::heapSort(std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > points, int n)
+{
+    // Build heap (rearrange array)
+    for (int i = n / 2 - 1; i >= 0; i--)
+	{
+        heapify(points, n, i);
+ 
+    // One by one extract an element from heap
+    for (int i=n-1; i>=0; i--)
+    {
+   
+        // Move current root to end
+        swap(&points[0], &points[i]);
+ 
+        // call max heapify on the reduced heap
+        heapify(points, i, 0);
+    }
+}
+}
+
+
+// Driver program
+void pclCluster::doHeapSort()
+{
+    heapSort(cloud->points, cloud->points.size());
+	cout<<"MaxDepth: "<<maxDepth<<endl;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::extractHull(int pointsToConsider)
+{
+	pcl::PointCloud<pcl::PointXYZ>::Ptr hull (new pcl::PointCloud<pcl::PointXYZ>);
+
+	std::vector<int> indexes;	
+
+	double yVal, zMax;
+	int x, maxIndex;
+	x=maxIndex=0;
+	yVal=zMax=0;
+	
+	indexes.push_back(0);
+	int stop=cloud->points.size()-pointsToConsider;
+	
+	for(int i=0; i<stop; i++)
+	{
+			
+		if(yVal!= cloud->points[i].y)
+		{
+			
+			yVal=cloud->points[i].y;
+
+			if(indexes[indexes.size()]!= maxIndex){indexes.push_back(maxIndex);}
+			
+			x=0;
+			zMax=cloud->points[i].z;
+		}
+		if(x>pointsToConsider)
+		{
+			
+			i=i-(pointsToConsider/2);
+			if(indexes[indexes.size()]!= maxIndex){indexes.push_back(maxIndex);}
+			x=0;
+			zMax=cloud->points[i].z;
+		}
+
+		if(zMax<cloud->points[i].z)
+		{
+
+			zMax= cloud->points[i].z;
+			maxIndex=i;
+		}
+		
+	}
+
+	hull->width=indexes.size();
+	hull->height =1;
+	hull->is_dense=true;
+	hull->points.resize(indexes.size());
+
+	for (int i=0; i<indexes.size(); i++){hull->points[i]=cloud->points[indexes[i]];}
+	
+	return hull;
+}
+
+
+
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::extractSurface(int decPlaces)
+{
+	pcl::PointCloud<pcl::PointXYZ>::Ptr hull (new pcl::PointCloud<pcl::PointXYZ>);
+
+	int x, xLast;
+	x=xLast=0;
+	for(int i=0; i<cloud->points.size(); i++)
+	{
+		x = (int)(decPlaces*cloud->points[i].x);
+		if(x!=xLast)
+		{
+			hull->points.push_back(cloud->points[i]);
+			xLast=x;
+		}
+	}
+	hull->width=hull->points.size();
+	hull->height =1;
+	hull->is_dense=true;
+	return hull;
+}	
+
+void pclCluster::cloudRound(int dec)
+{
+	float x,y,z;
+	for(int i=0; i<cloud->size(); i++)
+	{
+		x=cloud->points[i].x;
+		y=cloud->points[i].y;
+		z=cloud->points[i].z;
+				
+		x= round(x*dec)/dec;
+		y= round(y*dec)/dec;
+		z= round(z*dec)/dec;
+		
+		cloud->points[i].x=x;
+		cloud->points[i].y=y;
+		cloud->points[i].z=z;
+	}
+}
+
+
+void pclCluster::cloudSmooth(float searchRad)
+{
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointNormal> mls_points;
+	pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
+	
+	mls.setComputeNormals(true);
+	mls.setInputCloud(cloud);
+	mls.setPolynomialFit(true);
+	mls.setSearchMethod(tree);
+	mls.setSearchRadius(searchRad);
+	
+	mls.process(mls_points);
+	
+	pcl::io::savePCDFile("smoothedNormals.pcd", mls_points);
+}
+
+
+
+
+
+
+
+
+
+>>>>>>> 73de3620c04a91ad04485250d469dea32cdf9a1b
 
 
 

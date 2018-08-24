@@ -1,6 +1,6 @@
 #pragma once
 #include "includes.h"
-
+#include "pclMaker.h"
 /////////////////////////////// forward declaration of functions 
 
 //views a vector of clusters color clusters based on  size
@@ -102,14 +102,12 @@ void viewBySize(int minSize, int maxSize, std::vector<pclCluster> clusters)
 //Crops all clusters in a vector and returns the resulting vector
 std::vector<pclCluster> cropAll(std::string dim, double max, double min, std::vector<pclCluster>	clusters )
 {
-
-	std::vector<pclCluster> copyClusters=clusters;
 	//calls the crop fuction on each cluster object
-	for(int i=0; i<copyClusters.size(); i++)
+	for(std::vector<pclCluster >::iterator i=clusters.begin(); i!= clusters.end(); i++)
 	{
-		copyClusters[i].crop(dim, max, min);
+		(*i).crop(dim, max, min);
 	}
-	return copyClusters;
+	return clusters;
 }
 
 
@@ -354,6 +352,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr addColor(pcl::PointCloud<pcl::PointXYZ>::
 }
 
 
+<<<<<<< HEAD
 pcl::PointCloud<pcl::PointXYZ>::Ptr stereographicProjection(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 {
 	for(int i=0; i< cloud->points.size; i++)
@@ -372,6 +371,34 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr stereographicProjection(pcl::PointCloud<pcl:
 
 
 
+=======
+// turns all clusters into a circle retaining aprozimate points and size
+vector<pclCluster> clustersToCircles(vector<pclCluster> clusters)
+{
+	int points;
+	float size;
+	float x,y,z;
+	for(int i=0; i<clusters.size(); i++)
+	{
+		clusters[i].findSize();
+		x=clusters[i].center.x;
+		y=clusters[i].center.y;
+		z=clusters[i].center.z;
+		clusters[i].center.x=0;
+		clusters[i].center.y=0;
+		clusters[i].center.z=0;
+		points = clusters[i].cloud->points.size();
+		if(points<36){points = 36;}
+		size= clusters[i].height;
+		size+= clusters[i].width;
+		size+= clusters[i].length;
+		size=size/300;
+		clusters[i].cloud=makeCircle(size, points);
+		clusters[i].translateCenter(x,y,z);
+	}
+	return clusters;
+}
+>>>>>>> 73de3620c04a91ad04485250d469dea32cdf9a1b
 
 
 
