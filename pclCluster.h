@@ -68,11 +68,12 @@ class pclCluster
 	//A way to use a variable to get a point value
 	double getPointDim(int index, int dim);
 	
-<<<<<<< HEAD
+
 	//calculates normals and returns a cloud of the normals
 	pcl::PointCloud<pcl::PointXYZ>::Ptr getNormalCloud(float searchRad);
-	
-=======
+	pcl::PointCloud<pcl::Normal>::Ptr getNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, float searchRad);
+
+
 	//used for sorting the array 
 	void swap(pcl::PointXYZ* a,pcl::PointXYZ* b);
 	
@@ -96,7 +97,7 @@ class pclCluster
 	pcl::PointCloud<pcl::PointXYZ>::Ptr extractSurface(int decPlaces);
 	void cloudRound(int dec);
 	void cloudSmooth(float searchRad);
->>>>>>> 73de3620c04a91ad04485250d469dea32cdf9a1b
+
 };
 
 ////////////////////////////////
@@ -478,11 +479,11 @@ double pclCluster::getPointDim(int index, int dim)
 	return value;
 }
 
-<<<<<<< HEAD
+
 pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::getNormalCloud(float searchRad)
 {
 	//creating new cloud to be returned.
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr normalCloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr normalCloud(new pcl::PointCloud<pcl::PointXYZ>);
 	
 	//creating point normal object
 	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
@@ -490,6 +491,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::getNormalCloud(float searchRad)
 	cloud_normals = getNormals(cloud, searchRad);
 
 	normalCloud->height =1;
+	normalCloud->width = cloud->points.size();
 	normalCloud->is_dense=true;
 	normalCloud->points.resize(cloud->points.size());
 	for(size_t i=0; i<normalCloud->points.size(); i++)
@@ -501,7 +503,39 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::getNormalCloud(float searchRad)
 
 	return normalCloud;
 }
-=======
+
+
+pcl::PointCloud<pcl::Normal>::Ptr pclCluster::getNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, float searchRad)
+{
+ 
+
+  // Create the normal estimation class, and pass the input dataset to it
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
+  ne.setInputCloud (cloud);
+  ne.setViewPoint (0, 0, 10);
+
+  // Create an empty kdtree representation, and pass it to the normal estimation object.
+  // Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ> ());
+  ne.setSearchMethod (tree);
+
+  // Output datasets
+  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+
+  // Use all neighbors in a sphere of radius 3cm
+  ne.setRadiusSearch (searchRad);
+
+  // Compute the features
+  ne.compute (*cloud_normals);
+  
+  return cloud_normals;
+
+}
+
+
+
+
+
 // A utility function to swap two elements
 void pclCluster::swap( pcl::PointXYZ* a,  pcl::PointXYZ* b)
 {
@@ -795,8 +829,6 @@ void pclCluster::cloudSmooth(float searchRad)
 
 
 
-
->>>>>>> 73de3620c04a91ad04485250d469dea32cdf9a1b
 
 
 

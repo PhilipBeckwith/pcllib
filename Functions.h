@@ -352,12 +352,12 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr addColor(pcl::PointCloud<pcl::PointXYZ>::
 }
 
 
-<<<<<<< HEAD
+
 pcl::PointCloud<pcl::PointXYZ>::Ptr stereographicProjection(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 {
-	for(int i=0; i< cloud->points.size; i++)
+	for(int i=0; i< cloud->points.size(); i++)
 		{
-			float z = (-1)*cloud_normals->points[i].normal_z;
+			float z = (-1)*cloud->points[i].z;
 		
 			cloud->points[i].x = cloud->points[i].x /(1-z) ;
 			cloud->points[i].y = cloud->points[i].y /(1-z) ;
@@ -371,7 +371,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr stereographicProjection(pcl::PointCloud<pcl:
 
 
 
-=======
+
 // turns all clusters into a circle retaining aprozimate points and size
 vector<pclCluster> clustersToCircles(vector<pclCluster> clusters)
 {
@@ -398,7 +398,7 @@ vector<pclCluster> clustersToCircles(vector<pclCluster> clusters)
 	}
 	return clusters;
 }
->>>>>>> 73de3620c04a91ad04485250d469dea32cdf9a1b
+
 
 
 
