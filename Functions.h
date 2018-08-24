@@ -354,6 +354,22 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr addColor(pcl::PointCloud<pcl::PointXYZ>::
 }
 
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr stereographicProjection(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
+{
+	for(int i=0; i< cloud->points.size; i++)
+		{
+			float z = (-1)*cloud_normals->points[i].normal_z;
+		
+			cloud->points[i].x = cloud->points[i].x /(1-z) ;
+			cloud->points[i].y = cloud->points[i].y /(1-z) ;
+			cloud->points[i].z = 0;
+		
+		}
+	return cloud;
+}
+
+
+
 
 
 

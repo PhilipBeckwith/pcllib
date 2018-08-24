@@ -64,6 +64,8 @@ class pclCluster
 	//A way to use a variable to get a point value
 	double getPointDim(int index, int dim);
 	
+	//calculates normals and returns a cloud of the normals
+	pcl::PointCloud<pcl::PointXYZ>::Ptr getNormalCloud(float searchRad);
 	
 };
 
@@ -458,6 +460,28 @@ double pclCluster::getPointDim(int index, int dim)
 	return value;
 }
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::getNormalCloud(float searchRad)
+{
+	//creating new cloud to be returned.
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr normalCloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+	
+	//creating point normal object
+	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+	
+	cloud_normals = getNormals(cloud, searchRad);
+
+	normalCloud->height =1;
+	normalCloud->is_dense=true;
+	normalCloud->points.resize(cloud->points.size());
+	for(size_t i=0; i<normalCloud->points.size(); i++)
+	{	
+		normalCloud->points[i].x=  cloud_normals->points[i].normal_x;
+		normalCloud->points[i].y=  cloud_normals->points[i].normal_y;
+		normalCloud->points[i].z=  cloud_normals->points[i].normal_z;
+	}
+
+	return normalCloud;
+}
 
 
 
