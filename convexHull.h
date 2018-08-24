@@ -10,9 +10,9 @@ using namespace std;
 // 2 --> Counterclockwise
 int orientation(pcl::PointXYZ p, pcl::PointXYZ q, pcl::PointXYZ r)
 {
-    int val = (q.z - p.z) * (r.x - q.x) -
+    float val = (q.z - p.z) * (r.x - q.x) -
               (q.x - p.x) * (r.z - q.z);
- 
+// return val;
     if (val == 0) return 0;  // colinear
     return (val > 0)? 1: 2; // clock or counterclock wise
 }
@@ -21,7 +21,7 @@ int orientation(pcl::PointXYZ p, pcl::PointXYZ q, pcl::PointXYZ r)
 void getSliceHull(pcl::PointCloud<pcl::PointXYZ>::Ptr points, pcl::PointCloud<pcl::PointXYZ>::Ptr hull, int start ,int stop)
 {
     // There must be at least 3 points
-    if (stop-start < 3) {throw;};
+    if (stop-start > 3) {
  
     // Find the leftmost point
 	int l = start;
@@ -33,8 +33,9 @@ void getSliceHull(pcl::PointCloud<pcl::PointXYZ>::Ptr points, pcl::PointCloud<pc
     // Start from leftmost point, keep moving counterclockwise
     // until reach the start point again.  This loop runs O(h)
     // times where h is number of points in result or output.
-    int p = l, q;
+    int p = l, q=l;
 	cout<<"before loop\n";
+	float orr=0;
     do
     {
         // Add current point to result
@@ -46,13 +47,14 @@ void getSliceHull(pcl::PointCloud<pcl::PointXYZ>::Ptr points, pcl::PointCloud<pc
         // wise point in q. If any point 'i' is more counterclock-
         // wise than q, then update q.
         q++;
-	if(q>=stop){q=start;}
-        for (int i = start; i < stop; i++)
+	if(q>stop){q=start; cout<<"looping\n";}
+        for (int i = start; i <= stop; i++)
         {
            // If i is more counterclockwise than current q, then
            // update q
-           if (orientation(points->points[p], points->points[i], points->points[q]) == 2)
-               {q = i; }
+		float orrr=orientation(points->points[p], points->points[i], points->points[q]);
+           if (orrr ==2 )
+               {q = i; orr=orrr;}
 
         }
  
@@ -62,8 +64,9 @@ void getSliceHull(pcl::PointCloud<pcl::PointXYZ>::Ptr points, pcl::PointCloud<pc
         p = q;
  
     } while (p != l);  // While we don't come to first point
- 	cout<<"afterLoop\n";
+ 	
     // Print Result
+}
 }
  
 
@@ -79,18 +82,18 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr getConvexHull(pcl::PointCloud<pcl::PointXYZ>
 	for(int i=1; i<cloud->points.size(); i++)
 	{
 		y=(int ) (cloud->points[index.back()].y*100);
-		Y=(int ) (cloud->points[i].y*100);
-		if(y != Y){index.push_back(i);cout<<y<<" != "<<Y<<endl;}
+		Y=(int ) (cloud->points[i].y*10);
+		if(y != Y){index.push_back(i);}
 	}
-	index.push_back(cloud->points.size());
 	
 	for(int i = 0; i<index.size()-1; i++)
 	{
 		try
 		{
-			cout<<i <<": "<< index[i]<<endl;
+			cout<<i <<": "<< index[i]<< " : "<<index[i+1]<<endl;
 			getSliceHull(cloud, hull, index[i], index[i+1]);
-		}catch(...){}
+		}
+		catch(...){}
 		//cout<<"SIZE: "<< hull->points.size() <<endl;
 	}
 	hull->height =1;

@@ -1,6 +1,6 @@
 #pragma once
 #include "includes.h"
-
+#include "pclMaker.h"
 /////////////////////////////// forward declaration of functions 
 
 //views a vector of clusters color clusters based on  size
@@ -353,6 +353,51 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr addColor(pcl::PointCloud<pcl::PointXYZ>::
 
 
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr stereographicProjection(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
+{
+	for(int i=0; i< cloud->points.size(); i++)
+		{
+			float z = (-1)*cloud->points[i].z;
+		
+			cloud->points[i].x = cloud->points[i].x /(1-z) ;
+			cloud->points[i].y = cloud->points[i].y /(1-z) ;
+			cloud->points[i].z = 0;
+		
+		}
+	return cloud;
+}
+
+
+
+
+
+
+// turns all clusters into a circle retaining aprozimate points and size
+vector<pclCluster> clustersToCircles(vector<pclCluster> clusters)
+{
+	int points;
+	float size;
+	float x,y,z;
+	for(int i=0; i<clusters.size(); i++)
+	{
+		clusters[i].findSize();
+		x=clusters[i].center.x;
+		y=clusters[i].center.y;
+		z=clusters[i].center.z;
+		clusters[i].center.x=0;
+		clusters[i].center.y=0;
+		clusters[i].center.z=0;
+		points = clusters[i].cloud->points.size();
+		if(points<36){points = 36;}
+		size= clusters[i].height;
+		size+= clusters[i].width;
+		size+= clusters[i].length;
+		size=size/300;
+		clusters[i].cloud=makeCircle(size, points);
+		clusters[i].translateCenter(x,y,z);
+	}
+	return clusters;
+}
 
 
 

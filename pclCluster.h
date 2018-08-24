@@ -20,6 +20,7 @@ class pclCluster
 	double height, width, length, volume;
 	double maxX, maxY, maxZ;
 	double minX,minY,minZ;
+	double avgX, avgY,avgZ;
 
 	//constructors
 	pclCluster();
@@ -45,7 +46,7 @@ class pclCluster
 
 	//uses a switch statment to return a specified field
 	double getData(int x);
-	
+	double getDimAverage(int x);
 	//Moves the Cloud to an area in space
 	void translateCenter(double x, double y, double z);
 	
@@ -59,7 +60,7 @@ class pclCluster
 	//reflect the cloud an axsis
 	void reflect(char dim);
 	
-	//findsAMaxand a min within a subset of the cloud
+	//finds A Max and a min within a subset of the cloud
 	void localizedMaxMin(char dim, double lowerLim, double upperLim, double *max, double *min);
 
 	//removes outliers
@@ -68,6 +69,12 @@ class pclCluster
 	//A way to use a variable to get a point value
 	double getPointDim(int index, int dim);
 	
+
+	//calculates normals and returns a cloud of the normals
+	pcl::PointCloud<pcl::PointXYZ>::Ptr getNormalCloud(float searchRad);
+	pcl::PointCloud<pcl::Normal>::Ptr getNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, float searchRad);
+
+
 	//used for sorting the array 
 	void swap(pcl::PointXYZ* a,pcl::PointXYZ* b);
 	
@@ -90,6 +97,8 @@ class pclCluster
 	pcl::PointCloud<pcl::PointXYZ>::Ptr extractHull(int pointsToCosider);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr extractSurface(int decPlaces);
 	void cloudRound(int dec);
+	void cloudSmooth(float searchRad);
+
 };
 
 ////////////////////////////////
@@ -116,10 +125,10 @@ void pclCluster::open(std::string fileName)
 {
 	
 	pcl::PointCloud<pcl::PointXYZ>::Ptr temp (new pcl::PointCloud<pcl::PointXYZ>);
-	cout<<"opening File..."<<endl;
 	
 	if (pcl::io::loadPCDFile<pcl::PointXYZ> (fileName, *temp) == -1)
 	{
+		
 		pcl::PointCloud<pcl::PointXYZ>::Ptr Error (new pcl::PointCloud<pcl::PointXYZ>);
 		pcl::PointXYZ OOPS;
 		Error->points.push_back(OOPS);
@@ -150,7 +159,8 @@ void pclCluster::findSize()
 	maxX= minX = cloud->points[0].x;
 	maxY= minY = cloud->points[0].y;
 	maxZ= minZ = cloud->points[0].z;
-	
+	double sumX=0, sumY=0, sumZ=0;	
+
 	for (size_t i = 0; i < cloud->points.size (); ++i)
 	{
 		double tempX= cloud->points[i].x;
@@ -169,8 +179,15 @@ void pclCluster::findSize()
 		if(tempZ < minZ){minZ=tempZ;}
 		if(tempZ > maxZ){maxZ=tempZ;}
 		
+		sumX+= tempX;
+		sumY+= tempY;
+		sumZ+= tempZ;
 		
 	}
+	
+	avgX = sumX/ cloud->points.size();
+	avgY = sumY/ cloud->points.size();
+	avgZ = sumZ/ cloud->points.size();
 
 	//finds the length in each dimention
 	width= maxX-minX;
@@ -319,7 +336,25 @@ double pclCluster::getData(int x)
 }
 
 
-
+double pclCluster::getDimAverage(int x)
+{
+	double data =0;
+	
+	switch(x)
+	{
+		case 1:
+			data = avgX;
+			break;
+		case 2:
+			data = avgY;
+			break;
+		case 3:
+			data = avgZ;
+			break;
+	}
+	
+	return data;
+}
 
 void pclCluster::translateCenter(double x, double y, double z)
 {
@@ -439,8 +474,8 @@ void pclCluster::localizedMaxMin(char dim, double lowerLim, double upperLim, dou
 	//setting to mid point
 	*max = *min = (getData(dimVal+3)/2) ;
 	
-	*max = *max-1;
-	*min= *min+1;
+	*max = *max-5;
+	*min= *min+5;
 
 	for(int i=0; i<cloud->points.size(); i++)
 	{
@@ -470,6 +505,63 @@ double pclCluster::getPointDim(int index, int dim)
 	}
 	return value;
 }
+
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr pclCluster::getNormalCloud(float searchRad)
+{
+	//creating new cloud to be returned.
+	pcl::PointCloud<pcl::PointXYZ>::Ptr normalCloud(new pcl::PointCloud<pcl::PointXYZ>);
+	
+	//creating point normal object
+	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+	
+	cloud_normals = getNormals(cloud, searchRad);
+
+	normalCloud->height =1;
+	normalCloud->width = cloud->points.size();
+	normalCloud->is_dense=true;
+	normalCloud->points.resize(cloud->points.size());
+	for(size_t i=0; i<normalCloud->points.size(); i++)
+	{	
+		normalCloud->points[i].x=  cloud_normals->points[i].normal_x;
+		normalCloud->points[i].y=  cloud_normals->points[i].normal_y;
+		normalCloud->points[i].z=  cloud_normals->points[i].normal_z;
+	}
+
+	return normalCloud;
+}
+
+
+pcl::PointCloud<pcl::Normal>::Ptr pclCluster::getNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, float searchRad)
+{
+ 
+
+  // Create the normal estimation class, and pass the input dataset to it
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
+  ne.setInputCloud (cloud);
+  ne.setViewPoint (0, 0, 10);
+
+  // Create an empty kdtree representation, and pass it to the normal estimation object.
+  // Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ> ());
+  ne.setSearchMethod (tree);
+
+  // Output datasets
+  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+
+  // Use all neighbors in a sphere of radius 3cm
+  ne.setRadiusSearch (searchRad);
+
+  // Compute the features
+  ne.compute (*cloud_normals);
+  
+  return cloud_normals;
+
+}
+
+
+
+
 
 // A utility function to swap two elements
 void pclCluster::swap( pcl::PointXYZ* a,  pcl::PointXYZ* b)
@@ -738,6 +830,32 @@ void pclCluster::cloudRound(int dec)
 		cloud->points[i].z=z;
 	}
 }
+
+
+void pclCluster::cloudSmooth(float searchRad)
+{
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointNormal> mls_points;
+	pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
+	
+	mls.setComputeNormals(true);
+	mls.setInputCloud(cloud);
+	mls.setPolynomialFit(true);
+	mls.setSearchMethod(tree);
+	mls.setSearchRadius(searchRad);
+	
+	mls.process(mls_points);
+	
+	pcl::io::savePCDFile("smoothedNormals.pcd", mls_points);
+}
+
+
+
+
+
+
+
+
 
 
 
