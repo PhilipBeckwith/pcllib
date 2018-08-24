@@ -20,6 +20,7 @@ class pclCluster
 	double height, width, length, volume;
 	double maxX, maxY, maxZ;
 	double minX,minY,minZ;
+	double avgX, avgY,avgZ;
 
 	//constructors
 	pclCluster();
@@ -45,7 +46,7 @@ class pclCluster
 
 	//uses a switch statment to return a specified field
 	double getData(int x);
-	
+	double getDimAverage(int x);
 	//Moves the Cloud to an area in space
 	void translateCenter(double x, double y, double z);
 	
@@ -158,7 +159,8 @@ void pclCluster::findSize()
 	maxX= minX = cloud->points[0].x;
 	maxY= minY = cloud->points[0].y;
 	maxZ= minZ = cloud->points[0].z;
-	
+	double sumX=0, sumY=0, sumZ=0;	
+
 	for (size_t i = 0; i < cloud->points.size (); ++i)
 	{
 		double tempX= cloud->points[i].x;
@@ -177,8 +179,15 @@ void pclCluster::findSize()
 		if(tempZ < minZ){minZ=tempZ;}
 		if(tempZ > maxZ){maxZ=tempZ;}
 		
+		sumX+= tempX;
+		sumY+= tempY;
+		sumZ+= tempZ;
 		
 	}
+	
+	avgX = sumX/ cloud->points.size();
+	avgY = sumY/ cloud->points.size();
+	avgZ = sumZ/ cloud->points.size();
 
 	//finds the length in each dimention
 	width= maxX-minX;
@@ -327,7 +336,25 @@ double pclCluster::getData(int x)
 }
 
 
-
+double pclCluster::getDimAverage(int x)
+{
+	double data =0;
+	
+	switch(x)
+	{
+		case 1:
+			data = avgX;
+			break;
+		case 2:
+			data = avgY;
+			break;
+		case 3:
+			data = avgZ;
+			break;
+	}
+	
+	return data;
+}
 
 void pclCluster::translateCenter(double x, double y, double z)
 {
