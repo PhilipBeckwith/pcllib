@@ -4,13 +4,15 @@
 #include "GaussSmoothen.h"
 #include "math.h"
 #include "Smooth.h"
-
+#include "iostream"
 class PointCanopy
 {
 	const static float floor =-1.5;
-	std::vector<std::vector<pcl::PointXYZ> > pointField;
+	pcl::PointXYZ **pointField;
+	//std::vector<std::vector<pcl::PointXYZ> > pointField;
 	pcl::PointXYZ center;
 	pclCluster cloud;	
+	int width, length;
 	
 	public:
 	//constructors
@@ -22,15 +24,14 @@ class PointCanopy
 	void initalizeField(int dec);
 	void makeCanopy(int dec);
 	void setHeight(int x, int y, float z);
-	void mend(std::vector<double>values, int i);
-	void smooth(double sigma, int samples);
-	void smooth(int buffer);
-	int fillGaps(int skip);
-	int fillGapsX(int skip);
-	int fillGapsY(int skip);
-	std::vector<double> rip(int i);
+	//void mend(std::vector<double>values, int i);
+	//void smooth(double sigma, int samples);
+	//void smooth(int buffer);
+	//int fillGaps(int skip);
+	//int fillGapsX(int skip);
+	//int fillGapsY(int skip);
+	//std::vector<double> rip(int i);
 	pclCluster getCanopy();
-	void emptyCanopy();
 };
 
 
@@ -59,15 +60,16 @@ void PointCanopy::prepareCloud(int dec)
 
 void PointCanopy::initalizeField(int dec)
 {
-	int width, length;
 	
 	width = int (cloud.maxX * dec);
 	length = int (cloud.maxY * dec);
 	
-	pointField.resize(width);
+	pointField = new pcl::PointXYZ*[width];
+	//pointField.resize(width);
 	for(int i=0; i< width; i++)
-	{
-		pointField[i].resize(length);
+	{	
+		pointField[i]= new pcl::PointXYZ[length];
+		//pointField[i].resize(length);
 		for(int j=0; j<length; j++)
 		{
 			pointField[i][j].x=(i*1.0)/dec;
@@ -96,13 +98,17 @@ void PointCanopy::makeCanopy(int dec)
 
 void PointCanopy::setHeight(int x, int y, float z)
 {
-	if(x<pointField.size() && x>=0){
-		if(y<pointField[x].size() && y>=0){
+
+
+	if(x<width && x>=0){
+		if(y<length && y>=0){
 			if(z>pointField[x][y].z){
+			std::cout<<"Width: "<< x <<"/" << width<<"length: "<< y << "/"<<length;
 				pointField[x][y].z=z;
 			}
 		}	
 	}
+	
 }
 
 
@@ -110,11 +116,15 @@ pclCluster PointCanopy::getCanopy()
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr canopy(new pcl::PointCloud<pcl::PointXYZ>);
 	
-	for(int i=0; i<pointField.size(); i++){
-		for(int j=0; j< pointField[i].size(); j++){
+	for(int i=0; i<width; i++){
+		for(int j=0; j< length; j++)
+		{
+			std::cout<<"Width: "<< i <<"/" << width<<"length: "<< j << "/"<<length;
 			canopy->points.push_back(pointField[i][j]);
 		}
+		delete(pointField[i]);
 	}
+	delete (pointField);
 	
 	canopy->width = canopy->points.size();
 	canopy->height = 1;
@@ -126,6 +136,7 @@ pclCluster PointCanopy::getCanopy()
 	return cloud;
 }
 
+/*
 std::vector<double> PointCanopy::rip(int i)
 {
 	std::vector<double> values;
@@ -255,25 +266,7 @@ int PointCanopy::fillGaps(int skip)
 }
 
 
-void PointCanopy::emptyCanopy()
-{
-
-	for(int i=0; i<pointField.size(); i++)	
-	{
-		pointField[i].clear();	
-	}
-	pointField.clear();
-	cloud.cloud.reset();
-	
-}
-
-
-
-
-
-
-
-
+*/
 
 
 
