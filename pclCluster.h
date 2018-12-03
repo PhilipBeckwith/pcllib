@@ -565,7 +565,7 @@ void pclCluster::cloudRound(int dec)
 				
 		x= round(x*dec)/dec;
 		y= round(y*dec)/dec;
-		z= round(z*dec)/dec;
+		//z= round(z*dec)/dec;
 		
 		cloud->points[i].x=x;
 		cloud->points[i].y=y;
