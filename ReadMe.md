@@ -1,0 +1,3 @@
+# PCL Lib
+
+PCL Lib is a list of functions and classes that use the [point cloud library](http://pointclouds.org/). The main function of this Library is making to provide easy to use methods for high thoughput phenotyping, or more generally finding data about point clouds. This Library is used heavily in the [CottonLIDAR](https://github.com/anfrench/CottonLIDAR) project. Head over to the cotton lidar project to find out more [HERE](https://github.com/anfrench/CottonLIDAR).
