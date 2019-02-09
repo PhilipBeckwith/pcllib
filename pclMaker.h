@@ -99,7 +99,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeUnitCircle()
 	return cloud;
 }
 
-void fillField(pcl::PointCloud<pcl::PointXYZ>::Ptr field)
+pcl::PointCloud<pcl::PointXYZ>::Ptr fillField(pcl::PointCloud<pcl::PointXYZ>::Ptr field)
 {
 	int	fieldSize = field->points.size();
 	for(int i=0; i<fieldSize; i++)
@@ -113,6 +113,7 @@ void fillField(pcl::PointCloud<pcl::PointXYZ>::Ptr field)
 			field->points.push_back(point);
 		}
 	}
+	return field;
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr makeSlantField(float size)
@@ -132,7 +133,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeSlantField(float size)
 		}
 	}
 
-	fillField(cloud);
+	cloud = fillField(cloud);
 
 	cloud->width = cloud->points.size();
 	cloud->height =1;
