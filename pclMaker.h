@@ -108,8 +108,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fillField(pcl::PointCloud<pcl::PointXYZ>::Pt
 		{
 			pcl::PointXYZ point;
 			point.z=height;
-			point.y=height<field->points[i].y;
-			point.x=height<field->points[i].x;
+			point.y=field->points[i].y;
+			point.x=field->points[i].x;
 			field->points.push_back(point);
 		}
 	}
