@@ -106,9 +106,9 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeSlantField(float size)
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 	
 
-	for(float xMark =0; theta <size; xMark= .1)
+	for(float xMark =0; xMark <size; xMark= .1)
 	{
-		for(float yMark =0; theta <size; yMark= .1)
+		for(float yMark =0; yMark <size; yMark= .1)
 		{
 			pcl::PointXYZ point;
 			point.z= xMark;
