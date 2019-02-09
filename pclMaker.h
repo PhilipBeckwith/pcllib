@@ -132,7 +132,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeSlantField(float size)
 		}
 	}
 
-	//fillField(cloud);
+	fillField(cloud);
 
 	cloud->width = cloud->points.size();
 	cloud->height =1;
