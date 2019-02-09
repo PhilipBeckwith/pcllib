@@ -104,7 +104,7 @@ void fillField(pcl::PointCloud<pcl::PointXYZ>::Ptr field)
 	int	fieldSize = field->points.size();
 	for(int i=0; i<fieldSize; i++)
 	{
-		for(float height=0; height<field->points[i].z; height+=.1)
+		for(float height=0; height<field->points[i].z; height+=1)
 		{
 			pcl::PointXYZ point;
 			point.z=height;
@@ -120,9 +120,9 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeSlantField(float size)
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 	
 
-	for(float xMark =0; xMark <size; xMark= .1)
+	for(float xMark =0; xMark <size; xMark= .5)
 	{
-		for(float yMark =0; yMark <size; yMark= .1)
+		for(float yMark =0; yMark <size; yMark= .5)
 		{
 			pcl::PointXYZ point;
 			point.z= xMark;
