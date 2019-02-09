@@ -101,9 +101,49 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeUnitCircle()
 
 
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr makeSlantField(float size)
+{
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+	
+
+	for(float xMark =0; theta <size; xMark= .1)
+	{
+		for(float yMark =0; theta <size; yMark= .1)
+		{
+			pcl::PointXYZ point;
+			point.z= xMark;
+			point.y= yMark;
+			point.x= xMark;
+			cloud->points.push_back(point);
+		}
+	}
 
 
 
+	cloud->width = cloud->points.size();
+	cloud->height =1;
+	cloud->is_dense=true;
+	
+	return cloud;
+}
+
+
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr fillField(pcl::PointCloud<pcl::PointXYZ> field)
+{
+	int	fieldSize = field->points.size();
+	for(int i=0; i<fieldSize; i++)
+	{
+		for(float height=0; height<field->points[i].z; height+=.1)
+		{
+			pcl::PointXYZ point;
+			point.z=height;
+			point.y=height<field->points[i].y;
+			point.x=height<field->points[i].x;
+			field->points.push_back(point);
+		}
+	}
+}
 
 
 
