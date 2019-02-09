@@ -104,7 +104,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr fillField(pcl::PointCloud<pcl::PointXYZ>::Pt
 	int	fieldSize = field->points.size();
 	for(int i=0; i<fieldSize; i++)
 	{
-		for(float height=0; height<field->points[i].z; height+=1)
+		for(float height=0; height<1/*field->points[i].z*/; height+=1)
 		{
 			pcl::PointXYZ point;
 			point.z=height;
