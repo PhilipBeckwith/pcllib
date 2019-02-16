@@ -7,16 +7,17 @@
 
 class PointCanopy
 {
-	const static float floor =-1.5;
+	const static float floor =-20;
 	std::vector<std::vector<pcl::PointXYZ> > pointField;
-	pcl::PointXYZ center;
+	pcl::PointXYZ minPoints;
 	pclCluster cloud;	
-	
+	bool mkfloor;
 	public:
 	//constructors
 	PointCanopy();
 	PointCanopy(pclCluster cloudIN);
 	
+	void makeFloor(int canopyRatio);
 	void setCloud(pclCluster cloudIN);
 	void prepareCloud(int dec);
 	void initalizeField(int dec);
@@ -36,9 +37,10 @@ class PointCanopy
 
 
 //constructor
-PointCanopy::PointCanopy(){}
+PointCanopy::PointCanopy(){mkfloor=false;}
 PointCanopy::PointCanopy(pclCluster cloudIN)
 {
+	mkfloor=false;
 	cloud=cloudIN;
 }
 
@@ -49,12 +51,25 @@ void PointCanopy::setCloud(pclCluster cloudIN)
 
 void PointCanopy::prepareCloud(int dec)
 {
-	center=cloud.center;
-	//cloud.cloudRound(dec);
+	minPoints.x=cloud.minX;
+	minPoints.y=cloud.minY;
+	
+	if(mkfloor){minPoints.z=cloud.minZ;}
+	else{minPoints.z=cloud.maxZ;}
+	
 	cloud.translateX(0);
 	cloud.translateY(0);
 	cloud.findSize();
 	
+	if(mkfloor)
+	{
+		for(int n=0; n<cloud.cloud->points.size(); n++)
+		{
+			cloud.cloud->points[n].z*=-1;
+		}
+		cloud.findSize();
+	}
+	cloud.translateZ(0);
 }
 
 void PointCanopy::initalizeField(int dec)
@@ -77,6 +92,12 @@ void PointCanopy::initalizeField(int dec)
 	}
 }
 
+void PointCanopy::makeFloor(int canopyRatio)
+{
+	mkfloor=true;
+	makeCanopy(canopyRatio);
+}
+
 void PointCanopy::makeCanopy(int dec)
 {
 	int x, y;
@@ -91,7 +112,6 @@ void PointCanopy::makeCanopy(int dec)
 		z= cloud.cloud->points[i].z;
 		setHeight(x,y,z);
 	}
-	cloud.translateCenter(center.x,center.y,center.z);
 }
 
 void PointCanopy::setHeight(int x, int y, float z)
@@ -121,7 +141,29 @@ pclCluster PointCanopy::getCanopy()
 	canopy->is_dense = true;
 	
 	cloud.cloud=canopy;
-	cloud.findSize();	
+	cloud.findSize();
+	cloud.crop("z", 300, -1);
+	cloud.translateX(minPoints.x);
+	cloud.translateY(minPoints.y);
+	
+	if(mkfloor)
+	{
+		for(int n=0; n<cloud.cloud->points.size(); n++)
+		{
+			cloud.cloud->points[n].z*=-1;
+		}		
+	}
+	
+	cloud.findSize();
+	
+	if(!mkfloor)
+	{
+		minPoints.z-=(cloud.maxZ-cloud.minZ);
+	}
+	
+	cloud.findSize();
+	cloud.translateZ(minPoints.z);
+			
 
 	return cloud;
 }
