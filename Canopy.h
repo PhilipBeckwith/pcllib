@@ -76,8 +76,8 @@ void PointCanopy::initalizeField(int dec)
 {
 	int width, length;
 	
-	width = int (cloud.maxX * dec);
-	length = int (cloud.maxY * dec);
+	width = int (cloud.maxX * dec)+1;
+	length = int (cloud.maxY * dec)+1;
 	
 	pointField.resize(width);
 	for(int i=0; i< width; i++)
@@ -116,6 +116,7 @@ void PointCanopy::makeCanopy(int dec)
 
 void PointCanopy::setHeight(int x, int y, float z)
 {
+	/*
 	if(x<pointField.size() && x>=0){
 		if(y<pointField[x].size() && y>=0){
 			if(z>pointField[x][y].z){
@@ -123,6 +124,13 @@ void PointCanopy::setHeight(int x, int y, float z)
 			}
 		}	
 	}
+*/
+	if(x>=pointField.size()){x=pointField.size()-1;}
+	if(x<0){x=0;}
+	if(y>=pointField[x].size()){y=pointField[x].size()-1;}
+	if(y<0){y=0;}
+	if(z>pointField[x][y].z){pointField[x][y].z=z;}
+	
 }
 
 
