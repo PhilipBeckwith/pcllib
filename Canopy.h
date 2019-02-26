@@ -131,7 +131,7 @@ void PointCanopy::setHeight(int x, int y, pcl::PointXYZ point)
 	if(x<0){x=0;}
 	if(y>=pointField[x].size()){y=pointField[x].size()-1;}
 	if(y<0){y=0;}
-	if(z>pointField[x][y].z)
+	if(point.z>pointField[x][y].z)
 	{
 		pointField[x][y].x=point.x;
 		pointField[x][y].y=point.y;
