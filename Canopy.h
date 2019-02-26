@@ -22,7 +22,7 @@ class PointCanopy
 	void prepareCloud(int dec);
 	void initalizeField(int dec);
 	void makeCanopy(int dec);
-	void setHeight(int x, int y, float z);
+	void setHeight(int x, int y, pcl::PointXYZ point);
 	void mend(std::vector<double>values, int i);
 	void smooth(double sigma, int samples);
 	void smooth(int buffer);
@@ -110,17 +110,19 @@ void PointCanopy::makeCanopy(int dec)
 		x=(int) round(cloud.cloud->points[i].x * dec);
 		y=(int) round(cloud.cloud->points[i].y * dec);
 		z= cloud.cloud->points[i].z;
-		setHeight(x,y,z);
+		setHeight(x,y,cloud.cloud->points[i]);
 	}
 }
 
-void PointCanopy::setHeight(int x, int y, float z)
+void PointCanopy::setHeight(int x, int y, pcl::PointXYZ point)
 {
 	/*
 	if(x<pointField.size() && x>=0){
 		if(y<pointField[x].size() && y>=0){
-			if(z>pointField[x][y].z){
-				pointField[x][y].z=z;
+			if(point.z>pointField[x][y].z){
+				pointField[x][y].x=point.x;
+				pointField[x][y].y=point.y;
+				pointField[x][y].z=point.z;
 			}
 		}	
 	}
