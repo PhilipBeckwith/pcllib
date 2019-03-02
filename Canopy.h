@@ -8,7 +8,9 @@
 class PointCanopy
 {
 	const static float floor =-20;
-	std::vector<std::vector<pcl::PointXYZ> > pointField;
+	std::vector<std::vector<pcl::PointXYZ> > *pointField;
+	std::vector<std::vector<pcl::PointXYZ> > pointFieldCanopy;
+	std::vector<std::vector<pcl::PointXYZ> > pointFieldFloor;
 	pcl::PointXYZ minPoints;
 	pclCluster cloud;	
 	bool mkfloor;
@@ -21,7 +23,7 @@ class PointCanopy
 	void setCloud(pclCluster cloudIN);
 	void prepareCloud(int dec);
 	void initalizeField(int dec);
-	void makeCanopy(int dec);
+	void make(int dec);
 	void setHeight(int x, int y, pcl::PointXYZ point);
 	void mend(std::vector<double>values, int i);
 	void smooth(double sigma, int samples);
@@ -37,7 +39,10 @@ class PointCanopy
 
 
 //constructor
-PointCanopy::PointCanopy(){mkfloor=false;}
+PointCanopy::PointCanopy()
+{
+	mkfloor=false;
+}
 PointCanopy::PointCanopy(pclCluster cloudIN)
 {
 	mkfloor=false;
@@ -79,7 +84,7 @@ void PointCanopy::initalizeField(int dec)
 	width = int (cloud.maxX * dec)+1;
 	length = int (cloud.maxY * dec)+1;
 	
-	pointField.resize(width);
+	pointField->resize(width);
 	for(int i=0; i< width; i++)
 	{
 		pointField[i].resize(length);
@@ -95,10 +100,18 @@ void PointCanopy::initalizeField(int dec)
 void PointCanopy::makeFloor(int canopyRatio)
 {
 	mkfloor=true;
-	makeCanopy(canopyRatio);
+	pointField=&pointFieldFloor;
+	make(canopyRatio);
 }
 
-void PointCanopy::makeCanopy(int dec)
+void PointCanopy::makeCanopy(int canopyRatio)
+{
+	mkfloor=false;
+	pointField=&pointFieldCanopy;
+	make(canopyRatio);
+}
+
+void PointCanopy::make(int dec)
 {
 	int x, y;
 	float z;
@@ -117,7 +130,7 @@ void PointCanopy::makeCanopy(int dec)
 void PointCanopy::setHeight(int x, int y, pcl::PointXYZ point)
 {
 	/*
-	if(x<pointField.size() && x>=0){
+	if(x<pointField->size() && x>=0){
 		if(y<pointField[x].size() && y>=0){
 			if(point.z>pointField[x][y].z){
 				pointField[x][y].x=point.x;
@@ -127,7 +140,7 @@ void PointCanopy::setHeight(int x, int y, pcl::PointXYZ point)
 		}	
 	}
 */
-	if(x>=pointField.size()){x=pointField.size()-1;}
+	if(x>=pointField->size()){x=pointField->size()-1;}
 	if(x<0){x=0;}
 	if(y>=pointField[x].size()){y=pointField[x].size()-1;}
 	if(y<0){y=0;}
@@ -145,7 +158,7 @@ pclCluster PointCanopy::getCanopy()
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr canopy(new pcl::PointCloud<pcl::PointXYZ>);
 	
-	for(int i=0; i<pointField.size(); i++){
+	for(int i=0; i<pointField->size(); i++){
 		for(int j=0; j< pointField[i].size(); j++){
 			canopy->points.push_back(pointField[i][j]);
 		}
@@ -199,7 +212,7 @@ std::vector<double> PointCanopy::rip(int i)
 void PointCanopy::smooth(double sigma, int samples)
 {
 	std::vector<double> values;
-	for(int i=0; i<pointField.size(); i++)
+	for(int i=0; i<pointField->size(); i++)
 	{
 		values = rip(i);
 		values = gaussSmoothen(values, sigma, samples);
@@ -213,7 +226,7 @@ void PointCanopy::smooth(double sigma, int samples)
 void PointCanopy::smooth(int buffer)
 {
 	std::vector<double> values;
-	for(int i=0; i<pointField.size(); i++)
+	for(int i=0; i<pointField->size(); i++)
 	{
 		values = rip(i);
 		values = simpleSmooth(values, buffer);
@@ -241,7 +254,7 @@ int PointCanopy::fillGapsX(int skip)
 { 
 	std::cout<<"\nfill Gaps X";
 	int gaps =0;
-	int width = pointField.size();
+	int width = pointField->size();
 	int length = pointField[0].size();
 	float next, last;
 	for(int i=0; i < length; i++)
@@ -274,7 +287,7 @@ int PointCanopy::fillGapsY(int skip)
 { 
 	std::cout<<"\nfill Gaps Y";
 	int gaps =0;
-	int width = pointField.size();
+	int width = pointField->size();
 	int length = pointField[0].size();
 	float next, last;
 	for(int i=0; i < width; i++)
@@ -315,11 +328,11 @@ int PointCanopy::fillGaps(int skip)
 void PointCanopy::emptyCanopy()
 {
 
-	for(int i=0; i<pointField.size(); i++)	
+	for(int i=0; i<pointField->size(); i++)	
 	{
 		pointField[i].clear();	
 	}
-	pointField.clear();
+	pointField->clear();
 	cloud.cloud.reset();
 	
 }
