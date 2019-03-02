@@ -133,7 +133,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeSlantField(float size)
 		}
 	}
 
-	cloud = fillField(cloud);
+	//cloud = fillField(cloud);
 
 	cloud->width = cloud->points.size();
 	cloud->height =1;
@@ -143,10 +143,54 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr makeSlantField(float size)
 }
 
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr makePlane(double lowerX, double lowerY, double upperX, double upperY, double height, double density)
+{
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+	
+	density = 1/density;
+
+	for(double i=lowerX; i<upperX; i+=density){
+		for(double k=lowerY; k<upperY; k+=density){
+			pcl::PointXYZ point;
+			point.z= height;
+			point.y= k;
+			point.x= i;
+			cloud->points.push_back(point);
+		}
+	}
+
+	cloud->width = cloud->points.size();
+	cloud->height =1;
+	cloud->is_dense=true;
+	return cloud;
+}
 
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr makeStepPlane(std::vector<double> bounds, double density)
+{
+	int max=0;
+	int count=0;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+	
+	for(int i=0; i<bounds.size(); i++){if(max<bounds[i]){max=bounds[i];}}
+	
+	for(int i=0; i<bounds.size()-1; i++)
+	{
+		pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
+		temp=makePlane(bounds[i],0, bounds[i+1], max, i, density);
+		for(int k=0; k<temp->points.size(); k++)
+		{
+			cloud->points.push_back(temp->points[k]);
+			count++;
+		}
+		cout<<count<<endl;
+	}
 
-
+	cloud->width = cloud->points.size();
+	cloud->height =1;
+	cloud->is_dense=true;
+	return cloud;
+}
 
 
 
