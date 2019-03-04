@@ -286,7 +286,8 @@ void PointCanopy::mkHeightCloud()
 			point.y+=minY;
 			point.z=canopyHeight-groundHeight;
 			
-			heights->points.push_back(point);
+			if(point.z!=0){heights->points.push_back(point);}
+			
 		}
 		}
 	}
