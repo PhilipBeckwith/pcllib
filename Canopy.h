@@ -11,20 +11,38 @@ class PointCanopy
 	std::vector<std::vector<pcl::PointXYZ> > *pointField;
 	std::vector<std::vector<pcl::PointXYZ> > pointFieldCanopy;
 	std::vector<std::vector<pcl::PointXYZ> > pointFieldFloor;
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr canopy;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr ground;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr heights;
+
 	pcl::PointXYZ minPoints;
-	pclCluster cloud;	
-	bool mkfloor;
+	pclCluster cloud;
+	pclCluster canopyCloud, groundCloud, heightCloud;
+		
+	bool mkground;
+	
+	void mkGroundCloud();
+	void mkCanopyCloud();
+	void mkHeightCloud();
+	
 	public:
 	//constructors
 	PointCanopy();
 	PointCanopy(pclCluster cloudIN);
 	
-	void makeFloor(int canopyRatio);
+	void makeGround(int canopyRatio);
+	void makeCanopy(int canopyRatio);
+	void makeHeights(int canopyRatio);
+	
 	void setCloud(pclCluster cloudIN);
+	
 	void prepareCloud(int dec);
 	void initalizeField(int dec);
 	void make(int dec);
 	void setHeight(int x, int y, pcl::PointXYZ point);
+	void restoreCloud();
+	
 	void mend(std::vector<double>values, int i);
 	void smooth(double sigma, int samples);
 	void smooth(int buffer);
@@ -32,20 +50,26 @@ class PointCanopy
 	int fillGapsX(int skip);
 	int fillGapsY(int skip);
 	std::vector<double> rip(int i);
+	
 	pclCluster getCanopy();
+	pclCluster getGround();
+	pclCluster getHeights();
+	
 	void emptyCanopy();
 };
 
-
+pclCluster PointCanopy::getCanopy(){return canopyCloud;}
+pclCluster PointCanopy::getGround(){return groundCloud;}
+pclCluster PointCanopy::getHeights(){return heightCloud;}
 
 //constructor
 PointCanopy::PointCanopy()
 {
-	mkfloor=false;
+	mkground=false;
 }
 PointCanopy::PointCanopy(pclCluster cloudIN)
 {
-	mkfloor=false;
+	mkground=false;
 	cloud=cloudIN;
 }
 
@@ -56,17 +80,18 @@ void PointCanopy::setCloud(pclCluster cloudIN)
 
 void PointCanopy::prepareCloud(int dec)
 {
+	cloud.findSize();
 	minPoints.x=cloud.minX;
 	minPoints.y=cloud.minY;
 	
-	if(mkfloor){minPoints.z=cloud.minZ;}
+	if(mkground){minPoints.z=cloud.minZ;}
 	else{minPoints.z=cloud.maxZ;}
 	
 	cloud.translateX(0);
 	cloud.translateY(0);
 	cloud.findSize();
 	
-	if(mkfloor)
+	if(mkground)
 	{
 		for(int n=0; n<cloud.cloud->points.size(); n++)
 		{
@@ -75,6 +100,31 @@ void PointCanopy::prepareCloud(int dec)
 		cloud.findSize();
 	}
 	cloud.translateZ(0);
+}
+
+void PointCanopy::restoreCloud()
+{
+	cloud.translateX(minPoints.x);
+	cloud.translateY(minPoints.y);
+	double cloudZ=minPoints.z;
+	
+	if(mkground)
+	{
+		for(int n=0; n<cloud.cloud->points.size(); n++)
+		{
+			cloud.cloud->points[n].z*=-1;
+		}		
+	}
+	
+	cloud.findSize();
+	
+	if(!mkground)
+	{
+		cloudZ-=(cloud.maxZ-cloud.minZ);
+	}
+	
+	cloud.findSize();
+	cloud.translateZ(cloudZ);
 }
 
 void PointCanopy::initalizeField(int dec)
@@ -87,28 +137,37 @@ void PointCanopy::initalizeField(int dec)
 	pointField->resize(width);
 	for(int i=0; i< width; i++)
 	{
-		pointField[i].resize(length);
+		pointField->at(i).resize(length);
 		for(int j=0; j<length; j++)
 		{
-			pointField[i][j].x=(i*1.0)/dec;
-			pointField[i][j].y=(j*1.0)/dec;
-			pointField[i][j].z=floor;
+			pointField->at(i)[j].x=(i*1.0)/dec;
+			pointField->at(i)[j].y=(j*1.0)/dec;
+			pointField->at(i)[j].z=floor;
 		}
 	}
 }
 
-void PointCanopy::makeFloor(int canopyRatio)
+void PointCanopy::makeGround(int canopyRatio)
 {
-	mkfloor=true;
+	mkground=true;
 	pointField=&pointFieldFloor;
 	make(canopyRatio);
+	mkGroundCloud();
 }
 
 void PointCanopy::makeCanopy(int canopyRatio)
 {
-	mkfloor=false;
+	mkground=false;
 	pointField=&pointFieldCanopy;
 	make(canopyRatio);
+	mkCanopyCloud();
+}
+
+void PointCanopy::makeHeights(int canopyRatio)
+{
+	//makeCanopy(canopyRatio);
+	//makeGround(canopyRatio);
+	mkHeightCloud();
 }
 
 void PointCanopy::make(int dec)
@@ -125,42 +184,61 @@ void PointCanopy::make(int dec)
 		z= cloud.cloud->points[i].z;
 		setHeight(x,y,cloud.cloud->points[i]);
 	}
+	restoreCloud();
 }
 
 void PointCanopy::setHeight(int x, int y, pcl::PointXYZ point)
 {
-	/*
-	if(x<pointField->size() && x>=0){
-		if(y<pointField[x].size() && y>=0){
-			if(point.z>pointField[x][y].z){
-				pointField[x][y].x=point.x;
-				pointField[x][y].y=point.y;
-				pointField[x][y].z=point.z;
-			}
-		}	
-	}
-*/
 	if(x>=pointField->size()){x=pointField->size()-1;}
 	if(x<0){x=0;}
-	if(y>=pointField[x].size()){y=pointField[x].size()-1;}
+	if(y>=pointField->at(x).size()){y=pointField->at(x).size()-1;}
 	if(y<0){y=0;}
-	if(point.z>pointField[x][y].z)
+	if(point.z>pointField->at(x)[y].z)
 	{
-		pointField[x][y].x=point.x;
-		pointField[x][y].y=point.y;
-		pointField[x][y].z=point.z;
+		pointField->at(x)[y].x=point.x;
+		pointField->at(x)[y].y=point.y;
+		pointField->at(x)[y].z=point.z;
 	}
 	
 }
 
-
-pclCluster PointCanopy::getCanopy()
+void PointCanopy::mkGroundCloud()
 {
-	pcl::PointCloud<pcl::PointXYZ>::Ptr canopy(new pcl::PointCloud<pcl::PointXYZ>);
+pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
+	ground=temp;
+	
+	for(int i=0; i<pointFieldFloor.size(); i++){
+		for(int j=0; j< pointFieldFloor[i].size(); j++){
+			ground->points.push_back(pointFieldFloor[i][j]);
+		}
+	}
+	
+	ground->width = canopy->points.size();
+	ground->height = 1;
+	ground->is_dense = true;
+	
+	groundCloud.cloud=ground;
+	groundCloud.findSize();
+	groundCloud.translateX(minPoints.x);
+	groundCloud.translateY(minPoints.y);
+	
+	for(int n=0; n<groundCloud.cloud->points.size(); n++)
+	{
+		groundCloud.cloud->points[n].z*=-1;
+	}			
+	
+	groundCloud.findSize();
+	groundCloud.translateZ(minPoints.z);
+}
+
+void PointCanopy::mkCanopyCloud()
+{
+	pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
+	canopy=temp;
 	
 	for(int i=0; i<pointField->size(); i++){
-		for(int j=0; j< pointField[i].size(); j++){
-			canopy->points.push_back(pointField[i][j]);
+		for(int j=0; j< pointField->at(i).size(); j++){
+			canopy->points.push_back(pointField->at(i)[j]);
 		}
 	}
 	
@@ -168,41 +246,43 @@ pclCluster PointCanopy::getCanopy()
 	canopy->height = 1;
 	canopy->is_dense = true;
 	
-	cloud.cloud=canopy;
-	cloud.findSize();
-	cloud.crop("z", 300, -1);
-	cloud.translateX(minPoints.x);
-	cloud.translateY(minPoints.y);
-	
-	if(mkfloor)
-	{
-		for(int n=0; n<cloud.cloud->points.size(); n++)
-		{
-			cloud.cloud->points[n].z*=-1;
-		}		
-	}
-	
-	cloud.findSize();
-	
-	if(!mkfloor)
-	{
-		minPoints.z-=(cloud.maxZ-cloud.minZ);
-	}
-	
-	cloud.findSize();
-	cloud.translateZ(minPoints.z);
-			
+	canopyCloud.cloud=canopy;
+	canopyCloud.findSize();
+	canopyCloud.translateX(minPoints.x);
+	canopyCloud.translateY(minPoints.y);
+	canopyCloud.findSize();
+	minPoints.z-=(canopyCloud.maxZ-canopyCloud.minZ);
+	canopyCloud.translateZ(minPoints.z);
+}
 
-	return cloud;
+
+void PointCanopy::mkHeightCloud()
+{
+	if(canopy->points.size()==ground->points.size())
+	{
+		pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
+		heights=temp;
+		for(int i=0; i<canopy->points.size(); i++)
+		{
+			pcl::PointXYZ point;
+			point=canopy->points[i];
+			point.z-=ground->points[i].z;
+			heights->points.push_back(point);
+		}
+		heights->width = canopy->points.size();
+		heights->height = 1;
+		heights->is_dense = true;
+	}
+	heightCloud.cloud=heights;
 }
 
 std::vector<double> PointCanopy::rip(int i)
 {
 	std::vector<double> values;
 	double z;
-	for(int j=0; j<pointField[i].size(); j++)
+	for(int j=0; j<pointField->at(i).size(); j++)
 	{
-		z=(double) pointField[i][j].z;
+		z=(double) pointField->at(i)[j].z;
 		if(z!=floor){
 			values.push_back(z);}
 	}	
@@ -239,11 +319,11 @@ void PointCanopy::smooth(int buffer)
 void PointCanopy::mend(std::vector<double>values, int i)
 {
 	int index=0;
-	for(int j=0; j<pointField[i].size(); j++)
+	for(int j=0; j<pointField->at(i).size(); j++)
 	{
-		if(pointField[i][j].z!= floor)
+		if(pointField->at(i)[j].z!= floor)
 		{
-			pointField[i][j].z= (float) values[index];
+			pointField->at(i)[j].z= (float) values[index];
 			index ++;
 		}
 	}
@@ -255,22 +335,22 @@ int PointCanopy::fillGapsX(int skip)
 	std::cout<<"\nfill Gaps X";
 	int gaps =0;
 	int width = pointField->size();
-	int length = pointField[0].size();
+	int length = pointField->at(0).size();
 	float next, last;
 	for(int i=0; i < length; i++)
 	{
 		next=last=floor;
 		for(int j=skip; j<width-skip; j++)
 		{
-			next = pointField[j+skip][i].z;
-			last = pointField[j-skip][i].z;
-			if(pointField[j][i].z == floor)
+			next = pointField->at(j+skip)[i].z;
+			last = pointField->at(j+skip)[i].z;
+			if(pointField->at(j)[i].z == floor)
 			{
 				gaps++;
 				if(last!=floor && next !=floor)
 					{
 						gaps--;
-						pointField[j][i].z= (next+last)/2;
+						pointField->at(j)[i].z= (next+last)/2;
 						
 					}
 			}
@@ -288,22 +368,22 @@ int PointCanopy::fillGapsY(int skip)
 	std::cout<<"\nfill Gaps Y";
 	int gaps =0;
 	int width = pointField->size();
-	int length = pointField[0].size();
+	int length = pointField->at(0).size();
 	float next, last;
 	for(int i=0; i < width; i++)
 	{
 		next=last=floor;
 		for(int j=skip; j<length-skip; j++)
 		{
-			next = pointField[i][j+skip].z;
-			last = pointField[i][j-skip].z;
-			if(pointField[i][j].z == floor)
+			next = pointField->at(i)[j+skip].z;
+			last = pointField->at(i)[j-skip].z;
+			if(pointField->at(i)[j].z == floor)
 			{
 				gaps++;
 				if(last!=floor && next !=floor)
 					{
 						gaps--;
-						pointField[i][j].z= (next+last)/2;
+						pointField->at(i)[j].z= (next+last)/2;
 						
 					}
 			}
@@ -330,7 +410,7 @@ void PointCanopy::emptyCanopy()
 
 	for(int i=0; i<pointField->size(); i++)	
 	{
-		pointField[i].clear();	
+		pointField->at(i).clear();	
 	}
 	pointField->clear();
 	cloud.cloud.reset();
