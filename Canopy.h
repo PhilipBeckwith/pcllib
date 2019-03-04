@@ -16,7 +16,9 @@ class PointCanopy
 	pcl::PointCloud<pcl::PointXYZ>::Ptr ground;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr heights;
 
-	pcl::PointXYZ minPoints;
+	double minZ, maxZ, minY, minX;
+	double canopyAdjust;
+	
 	pclCluster cloud;
 	pclCluster canopyCloud, groundCloud, heightCloud;
 		
@@ -81,11 +83,10 @@ void PointCanopy::setCloud(pclCluster cloudIN)
 void PointCanopy::prepareCloud(int dec)
 {
 	cloud.findSize();
-	minPoints.x=cloud.minX;
-	minPoints.y=cloud.minY;
-	
-	if(mkground){minPoints.z=cloud.minZ;}
-	else{minPoints.z=cloud.maxZ;}
+	minX=cloud.minX;
+	minY=cloud.minY;
+	minZ=cloud.minZ;
+	maxZ=cloud.maxZ;
 	
 	cloud.translateX(0);
 	cloud.translateY(0);
@@ -104,9 +105,9 @@ void PointCanopy::prepareCloud(int dec)
 
 void PointCanopy::restoreCloud()
 {
-	cloud.translateX(minPoints.x);
-	cloud.translateY(minPoints.y);
-	double cloudZ=minPoints.z;
+	cloud.translateX(minX);
+	cloud.translateY(minY);
+	double cloudZ=minZ;
 	
 	if(mkground)
 	{
@@ -120,7 +121,7 @@ void PointCanopy::restoreCloud()
 	
 	if(!mkground)
 	{
-		cloudZ-=(cloud.maxZ-cloud.minZ);
+		cloudZ= maxZ-(cloud.maxZ-cloud.minZ);
 	}
 	
 	cloud.findSize();
@@ -209,7 +210,10 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
 	
 	for(int i=0; i<pointFieldFloor.size(); i++){
 		for(int j=0; j< pointFieldFloor[i].size(); j++){
-			ground->points.push_back(pointFieldFloor[i][j]);
+			if(pointFieldFloor[i][j].z !=floor)
+			{
+				ground->points.push_back(pointFieldFloor[i][j]);
+			}
 		}
 	}
 	
@@ -219,8 +223,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
 	
 	groundCloud.cloud=ground;
 	groundCloud.findSize();
-	groundCloud.translateX(minPoints.x);
-	groundCloud.translateY(minPoints.y);
+	groundCloud.translateX(minX);
+	groundCloud.translateY(minY);
 	
 	for(int n=0; n<groundCloud.cloud->points.size(); n++)
 	{
@@ -228,7 +232,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
 	}			
 	
 	groundCloud.findSize();
-	groundCloud.translateZ(minPoints.z);
+	groundCloud.translateZ(minZ);
 }
 
 void PointCanopy::mkCanopyCloud()
@@ -236,9 +240,12 @@ void PointCanopy::mkCanopyCloud()
 	pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
 	canopy=temp;
 	
-	for(int i=0; i<pointField->size(); i++){
-		for(int j=0; j< pointField->at(i).size(); j++){
-			canopy->points.push_back(pointField->at(i)[j]);
+	for(int i=0; i<pointFieldCanopy.size(); i++){
+		for(int j=0; j< pointFieldCanopy[i].size(); j++){
+			if(pointFieldCanopy[i][j].z !=floor)
+			{
+				canopy->points.push_back(pointFieldCanopy[i][j]);
+			}
 		}
 	}
 	
@@ -248,31 +255,54 @@ void PointCanopy::mkCanopyCloud()
 	
 	canopyCloud.cloud=canopy;
 	canopyCloud.findSize();
-	canopyCloud.translateX(minPoints.x);
-	canopyCloud.translateY(minPoints.y);
+	canopyCloud.translateX(minX);
+	canopyCloud.translateY(minY);
 	canopyCloud.findSize();
-	minPoints.z-=(canopyCloud.maxZ-canopyCloud.minZ);
-	canopyCloud.translateZ(minPoints.z);
+	canopyAdjust= maxZ-(canopyCloud.maxZ-canopyCloud.minZ);
+	canopyCloud.translateZ(canopyAdjust);
 }
 
 
 void PointCanopy::mkHeightCloud()
 {
-	if(canopy->points.size()==ground->points.size())
-	{
-		pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
-		heights=temp;
-		for(int i=0; i<canopy->points.size(); i++)
+	pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
+	heights=temp;
+	
+	canopyCloud.findSize();
+	
+	for(int i=0; i<pointFieldCanopy.size() && i<pointFieldFloor.size(); i++){
+		for(int j=0; j<pointFieldCanopy[i].size() && j<pointFieldFloor[i].size(); j++){
+		if(pointFieldCanopy[i][j].z!=floor && pointFieldFloor[i][j].z!=floor)
 		{
 			pcl::PointXYZ point;
-			point=canopy->points[i];
-			point.z-=ground->points[i].z;
+			double canopyHeight=0, groundHeight=0;
+			
+			canopyHeight=pointFieldCanopy[i][j].z+canopyAdjust;
+			groundHeight=(-1*pointFieldFloor[i][j].z)+maxZ;
+			point.x=(pointFieldCanopy[i][j].x+pointFieldFloor[i][j].x)/2;
+			point.y=(pointFieldCanopy[i][j].y+pointFieldFloor[i][j].y)/2;
+			
+			point.x+=minX;
+			point.y+=minY;
+			point.z=canopyHeight-groundHeight;
+			
 			heights->points.push_back(point);
 		}
-		heights->width = canopy->points.size();
-		heights->height = 1;
-		heights->is_dense = true;
+		}
 	}
+	
+	if(heights->points.size()==0)
+	{
+		pcl::PointXYZ point;
+		point.x=0;
+		point.y=0;
+		point.z=0;
+		heights->points.push_back(point);
+	}
+	
+	heights->width = heights->points.size();
+	heights->height = 1;
+	heights->is_dense = true;
 	heightCloud.cloud=heights;
 }
 
