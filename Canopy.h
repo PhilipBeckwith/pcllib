@@ -217,7 +217,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr temp(new pcl::PointCloud<pcl::PointXYZ>);
 		}
 	}
 	
-	ground->width = canopy->points.size();
+	ground->width = ground->points.size();
 	ground->height = 1;
 	ground->is_dense = true;
 	
